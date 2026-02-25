@@ -28,6 +28,11 @@ description = "Build the ClawMachine binary"
 depends = ["charts"]
 run = "cd control-plane && go build -o clawmachine ./cmd/clawmachine/ && echo '✓ Binary built'"
 
+[tasks.clawmachine]
+description = "Run the ClawMachine CLI via go run (pass args after --)"
+depends = ["charts"]
+run = "cd control-plane && go run ./cmd/clawmachine"
+
 [tasks.test]
 description = "Run Go tests"
 depends = ["charts"]

@@ -57,16 +57,6 @@ func newRootCmd() *cobra.Command {
 	return root
 }
 
-func newVersionCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "Print the ClawMachine version",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(titleStyle.Render("clawmachine") + " " + accentStyle.Render("v"+version))
-		},
-	}
-}
-
 func newCompletionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",

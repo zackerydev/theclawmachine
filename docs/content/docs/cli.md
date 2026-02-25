@@ -20,6 +20,7 @@ clawmachine backup
 clawmachine restore
 clawmachine completion [bash|zsh|fish|powershell]
 clawmachine version
+clawmachine version --all
 ```
 
 ## Global Flags
@@ -119,6 +120,30 @@ clawmachine completion bash
 
 ```bash
 clawmachine version
+clawmachine version --all
+```
+
+`clawmachine version` prints the CLI version.
+
+`clawmachine version --all` also prints:
+- Canonical bot image refs (`repo:tag`) from embedded bot charts
+- SHA256 checksums for vendored embedded charts (External Secrets, Cilium, Connect)
+
+Example:
+
+```text
+clawmachine v0.1.0
+
+bot images (canonical repo:tag):
+  - openclaw: ghcr.io/zackerydev/openclaw:0.1.0
+  - picoclaw: ghcr.io/zackerydev/picoclaw:0.1.0
+  - ironclaw: ghcr.io/zackerydev/ironclaw:0.1.0
+  - busybox: ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0
+
+vendored charts (sha256):
+  - external-secrets@2.0.0: sha256:<digest>
+  - cilium@1.17.1: sha256:<digest>
+  - connect@2.3.0: sha256:<digest>
 ```
 
 ## HTTP API Endpoints (Serve Mode)
