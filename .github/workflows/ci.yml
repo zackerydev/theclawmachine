@@ -32,6 +32,9 @@ jobs:
       - name: golangci-lint
         run: mise run lint
 
+      - name: release image contract
+        run: mise run release:image-contract
+
       - name: go test
         run: mise run test:ci
 

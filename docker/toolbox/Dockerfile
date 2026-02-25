@@ -1,5 +1,19 @@
-# Copy IronClaw binary from local ironclaw image (built by Tilt)
-FROM ironclaw AS ironclaw-bin
+# Build IronClaw binary so toolbox can be built in CI/release without local image state.
+FROM rust:1.92-slim-bookworm AS ironclaw-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config libssl-dev git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+ARG IRONCLAW_VERSION=main
+RUN git clone --depth 1 --branch ${IRONCLAW_VERSION} \
+    https://github.com/nearai/ironclaw.git .
+
+RUN cargo build --release --no-default-features --features postgres \
+    && strip target/release/ironclaw \
+    && test -f target/release/ironclaw
 
 FROM debian:bookworm-slim
 
@@ -26,8 +40,8 @@ RUN wget -q -O /usr/local/bin/picoclaw \
     && chmod +x /usr/local/bin/picoclaw \
     || echo "⚠ picoclaw download failed"
 
-# IronClaw binary (from ironclaw image)
-COPY --from=ironclaw-bin /usr/local/bin/ironclaw /usr/local/bin/ironclaw
+# IronClaw binary (built in this Dockerfile for release reproducibility)
+COPY --from=ironclaw-builder /src/target/release/ironclaw /usr/local/bin/ironclaw
 
 # Create non-root user
 RUN userdel debian 2>/dev/null || true && useradd -u 1000 -m -s /bin/bash claw

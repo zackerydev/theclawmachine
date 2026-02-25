@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/zackerydev/picoclaw
-  tag: "0.1.2"
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 
 replicas: 1

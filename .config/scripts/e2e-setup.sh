@@ -23,6 +23,7 @@ chart_image_tag() {
 PICOCLAW_TAG="$(chart_image_tag ./charts/picoclaw/values.yaml)"
 OPENCLAW_TAG="$(chart_image_tag ./charts/openclaw/values.yaml)"
 IRONCLAW_TAG="$(chart_image_tag ./charts/ironclaw/values.yaml)"
+TOOLBOX_TAG="$(chart_image_tag ./charts/busybox/values.yaml)"
 if [[ -z "$PICOCLAW_TAG" ]]; then
   echo "❌ Unable to resolve image.tag from charts/picoclaw/values.yaml"
   exit 1
@@ -33,6 +34,10 @@ if [[ -z "$OPENCLAW_TAG" ]]; then
 fi
 if [[ -z "$IRONCLAW_TAG" ]]; then
   echo "❌ Unable to resolve image.tag from charts/ironclaw/values.yaml"
+  exit 1
+fi
+if [[ -z "$TOOLBOX_TAG" ]]; then
+  echo "❌ Unable to resolve image.tag from charts/busybox/values.yaml"
   exit 1
 fi
 
@@ -86,7 +91,7 @@ bg "pull pgvector"   docker pull pgvector/pgvector:pg17
 # toolbox depends on ironclaw — chain them
 bg "build ironclaw+toolbox" bash -c "
   docker buildx build --load -t ghcr.io/zackerydev/ironclaw:${IRONCLAW_TAG} ../docker/ironclaw
-  docker buildx build --load -t ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0 ../docker/toolbox
+  docker buildx build --load -t ghcr.io/zackerydev/theclawmachine-toolbox:${TOOLBOX_TAG} ../docker/toolbox
 "
 
 wait_all
@@ -102,7 +107,7 @@ echo "📦 Step 3: Load images into kind (parallel)"
 bg "load picoclaw"  kind load docker-image "ghcr.io/zackerydev/picoclaw:${PICOCLAW_TAG}"  --name "$CLUSTER_NAME"
 bg "load ironclaw"  kind load docker-image ghcr.io/zackerydev/ironclaw:${IRONCLAW_TAG}    --name "$CLUSTER_NAME"
 bg "load openclaw"  kind load docker-image "ghcr.io/zackerydev/openclaw:${OPENCLAW_TAG}"   --name "$CLUSTER_NAME"
-bg "load toolbox"   kind load docker-image ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0   --name "$CLUSTER_NAME"
+bg "load toolbox"   kind load docker-image ghcr.io/zackerydev/theclawmachine-toolbox:${TOOLBOX_TAG}   --name "$CLUSTER_NAME"
 bg "load clawmachine" kind load docker-image "ghcr.io/zackerydev/theclawmachine:${CLAWMACHINE_TAG}" --name "$CLUSTER_NAME"
 bg "load pgvector"  kind load docker-image pgvector/pgvector:pg17                         --name "$CLUSTER_NAME"
 wait_all

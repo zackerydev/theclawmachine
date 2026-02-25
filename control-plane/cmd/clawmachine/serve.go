@@ -100,7 +100,7 @@ func runServe(cmd *cobra.Command) error {
 	backupSvc := service.NewBackupService(helmSvc)
 	onboardingEngine := onboarding.NewEngine(botReg)
 
-	helmHandler := handler.NewHelmHandler(helmSvc, tmpl, botSecretsSvc, secretsSvc, k8s, botReg, dev)
+	helmHandler := handler.NewHelmHandlerWithVersion(helmSvc, tmpl, botSecretsSvc, secretsSvc, k8s, botReg, dev, version)
 
 	routes.Setup(mux, &routes.Handlers{
 		Helm:       helmHandler,

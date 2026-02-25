@@ -280,6 +280,85 @@ func TestHelmHandler_Install(t *testing.T) {
 	}
 }
 
+func TestNormalizeReleaseImageTag(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "stable", in: "0.1.0", want: "0.1.0"},
+		{name: "stable with v", in: "v0.1.0", want: "0.1.0"},
+		{name: "dev", in: "dev", want: ""},
+		{name: "prerelease", in: "0.1.0-rc.1", want: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeReleaseImageTag(tt.in)
+			if got != tt.want {
+				t.Fatalf("normalizeReleaseImageTag(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestHelmHandler_Install_RuntimeTagDefaulting(t *testing.T) {
+	t.Run("sets runtime tag when missing", func(t *testing.T) {
+		done := make(chan struct{})
+		mock := &mockHelm{
+			installed:   &service.ReleaseInfo{Name: "test-bot", Status: "deployed"},
+			installDone: done,
+		}
+		h := NewHelmHandlerWithVersion(mock, &mockTemplate{}, nil, nil, nil, nil, false, "0.1.0")
+
+		req := httptest.NewRequest(http.MethodPost, "/bots", bytes.NewBufferString(`{"releaseName":"test-bot","botType":"picoclaw"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		h.Install(rec, req)
+
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("status %d, body: %s", rec.Code, rec.Body.String())
+		}
+		<-done
+
+		image, ok := mock.installOpts.Values["image"].(map[string]any)
+		if !ok {
+			t.Fatalf("image missing from install values: %#v", mock.installOpts.Values)
+		}
+		if tag := image["tag"]; tag != "0.1.0" {
+			t.Fatalf("image.tag = %v, want 0.1.0", tag)
+		}
+	})
+
+	t.Run("keeps explicit tag", func(t *testing.T) {
+		done := make(chan struct{})
+		mock := &mockHelm{
+			installed:   &service.ReleaseInfo{Name: "test-bot", Status: "deployed"},
+			installDone: done,
+		}
+		h := NewHelmHandlerWithVersion(mock, &mockTemplate{}, nil, nil, nil, nil, false, "0.1.0")
+
+		body := `{"releaseName":"test-bot","botType":"picoclaw","values":{"image":{"tag":"9.9.9"}}}`
+		req := httptest.NewRequest(http.MethodPost, "/bots", bytes.NewBufferString(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		h.Install(rec, req)
+
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("status %d, body: %s", rec.Code, rec.Body.String())
+		}
+		<-done
+
+		image, ok := mock.installOpts.Values["image"].(map[string]any)
+		if !ok {
+			t.Fatalf("image missing from install values: %#v", mock.installOpts.Values)
+		}
+		if tag := image["tag"]; tag != "9.9.9" {
+			t.Fatalf("image.tag = %v, want 9.9.9", tag)
+		}
+	})
+}
+
 func TestHelmHandler_Status(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -407,6 +486,72 @@ func TestHelmHandler_Upgrade_BotTypeFallbackFromStatus(t *testing.T) {
 	if mock.upgradeBotType != service.BotTypeOpenClaw {
 		t.Fatalf("upgradeBotType = %q, want %q", mock.upgradeBotType, service.BotTypeOpenClaw)
 	}
+}
+
+func TestHelmHandler_Upgrade_RuntimeTagDefaulting(t *testing.T) {
+	t.Run("forces runtime tag when body does not set image tag", func(t *testing.T) {
+		mock := &mockHelm{
+			values: map[string]any{
+				"image": map[string]any{
+					"tag": "2026.2.21",
+				},
+				"env": map[string]any{
+					"BOT_TYPE": "openclaw",
+				},
+			},
+			upgraded: &service.ReleaseInfo{Name: "dorothy", Status: "deployed", BotType: "openclaw"},
+		}
+		h := NewHelmHandlerWithVersion(mock, &mockTemplate{}, nil, nil, nil, nil, false, "0.1.0")
+
+		req := httptest.NewRequest(http.MethodPut, "/bots/dorothy", strings.NewReader(`{"values":{"networkPolicy":{"ingress":true}}}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.SetPathValue("name", "dorothy")
+		rec := httptest.NewRecorder()
+		h.Upgrade(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status %d, body: %s", rec.Code, rec.Body.String())
+		}
+		image, ok := mock.upgradeValues["image"].(map[string]any)
+		if !ok {
+			t.Fatalf("image missing from upgrade values: %#v", mock.upgradeValues)
+		}
+		if tag := image["tag"]; tag != "0.1.0" {
+			t.Fatalf("image.tag = %v, want 0.1.0", tag)
+		}
+	})
+
+	t.Run("keeps explicit body image tag", func(t *testing.T) {
+		mock := &mockHelm{
+			values: map[string]any{
+				"image": map[string]any{
+					"tag": "2026.2.21",
+				},
+				"env": map[string]any{
+					"BOT_TYPE": "openclaw",
+				},
+			},
+			upgraded: &service.ReleaseInfo{Name: "dorothy", Status: "deployed", BotType: "openclaw"},
+		}
+		h := NewHelmHandlerWithVersion(mock, &mockTemplate{}, nil, nil, nil, nil, false, "0.1.0")
+
+		req := httptest.NewRequest(http.MethodPut, "/bots/dorothy", strings.NewReader(`{"values":{"image":{"tag":"7.7.7"}}}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.SetPathValue("name", "dorothy")
+		rec := httptest.NewRecorder()
+		h.Upgrade(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("status %d, body: %s", rec.Code, rec.Body.String())
+		}
+		image, ok := mock.upgradeValues["image"].(map[string]any)
+		if !ok {
+			t.Fatalf("image missing from upgrade values: %#v", mock.upgradeValues)
+		}
+		if tag := image["tag"]; tag != "7.7.7" {
+			t.Fatalf("image.tag = %v, want 7.7.7", tag)
+		}
+	})
 }
 
 func TestHelmHandler_Uninstall(t *testing.T) {

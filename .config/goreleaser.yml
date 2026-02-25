@@ -78,6 +78,62 @@ dockers_v2:
       org.opencontainers.image.source: "{{ .GitURL }}"
     extra_files:
       - control-plane
+  - id: openclaw
+    dockerfile: docker/openclaw/Dockerfile
+    images:
+      - ghcr.io/zackerydev/openclaw
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "openclaw"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+  - id: picoclaw
+    dockerfile: docker/picoclaw/Dockerfile
+    images:
+      - ghcr.io/zackerydev/picoclaw
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "picoclaw"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+  - id: ironclaw
+    dockerfile: docker/ironclaw/Dockerfile
+    images:
+      - ghcr.io/zackerydev/ironclaw
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "ironclaw"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+  - id: toolbox
+    dockerfile: docker/toolbox/Dockerfile
+    images:
+      - ghcr.io/zackerydev/theclawmachine-toolbox
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "theclawmachine-toolbox"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
 
 release:
   github:

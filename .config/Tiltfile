@@ -46,14 +46,14 @@ local_resource(
 
 local_resource(
     'picoclaw-image',
-    cmd='docker build -t ghcr.io/zackerydev/picoclaw:0.1.2 ../docker/picoclaw && kind load docker-image ghcr.io/zackerydev/picoclaw:0.1.2 --name clawmachine',
+    cmd='docker build -t ghcr.io/zackerydev/picoclaw:0.1.0 ../docker/picoclaw && kind load docker-image ghcr.io/zackerydev/picoclaw:0.1.0 --name clawmachine',
     deps=['../docker/picoclaw'],
     labels=['build'],
 )
 
 local_resource(
     'ironclaw-image',
-    cmd='docker build -t ghcr.io/zackerydev/ironclaw:0.11.1 ../docker/ironclaw && kind load docker-image ghcr.io/zackerydev/ironclaw:0.11.1 --name clawmachine',
+    cmd='docker build -t ghcr.io/zackerydev/ironclaw:0.1.0 ../docker/ironclaw && kind load docker-image ghcr.io/zackerydev/ironclaw:0.1.0 --name clawmachine',
     deps=['../docker/ironclaw'],
     labels=['build'],
 )
@@ -67,7 +67,7 @@ local_resource(
 
 local_resource(
     'openclaw-image',
-    cmd='docker build -t ghcr.io/zackerydev/openclaw:2026.2.21 ../docker/openclaw && kind load docker-image ghcr.io/zackerydev/openclaw:2026.2.21 --name clawmachine',
+    cmd='docker build -t ghcr.io/zackerydev/openclaw:0.1.0 ../docker/openclaw && kind load docker-image ghcr.io/zackerydev/openclaw:0.1.0 --name clawmachine',
     deps=['../docker/openclaw'],
     labels=['build'],
 )

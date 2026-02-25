@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/zackerydev/openclaw
-  tag: "2026.2.21"
+  tag: "0.1.0"
   pullPolicy: IfNotPresent
 
 replicas: 1

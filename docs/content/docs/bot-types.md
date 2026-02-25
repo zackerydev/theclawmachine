@@ -11,7 +11,7 @@ Bot types are defined by embedded charts and `internal/botenv` metadata.
 
 Defaults (`charts/openclaw/values.yaml`):
 
-- image: `ghcr.io/zackerydev/openclaw:2026.2.21`
+- image: `ghcr.io/zackerydev/openclaw:0.1.0`
 - service port: `18789`
 - persistence: enabled (`5Gi`)
 - network: ingress `false`, egress `true`
@@ -20,7 +20,7 @@ Defaults (`charts/openclaw/values.yaml`):
 
 Defaults (`charts/picoclaw/values.yaml`):
 
-- image: `ghcr.io/zackerydev/picoclaw:0.1.2`
+- image: `ghcr.io/zackerydev/picoclaw:0.1.0`
 - service port: `18790`
 - persistence: disabled
 - network: ingress `false`, egress `false`
@@ -29,7 +29,7 @@ Defaults (`charts/picoclaw/values.yaml`):
 
 Defaults (`charts/ironclaw/values.yaml`):
 
-- image: `ghcr.io/zackerydev/ironclaw:0.11.1`
+- image: `ghcr.io/zackerydev/ironclaw:0.1.0`
 - service port: `3000`
 - built-in PostgreSQL with pgvector enabled by default
 - backup mode default: `pgdump`

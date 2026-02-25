@@ -33,9 +33,14 @@ type HelmHandler struct {
 	bots       *botenv.Registry
 	onboarding *onboarding.Engine
 	devMode    bool
+	runtimeVer string
 }
 
 func NewHelmHandler(helm HelmManager, tmpl TemplateRenderer, botSecrets *service.BotSecretsService, secrets SecretsManager, k8s KubernetesManager, bots *botenv.Registry, devMode bool) *HelmHandler {
+	return NewHelmHandlerWithVersion(helm, tmpl, botSecrets, secrets, k8s, bots, devMode, "")
+}
+
+func NewHelmHandlerWithVersion(helm HelmManager, tmpl TemplateRenderer, botSecrets *service.BotSecretsService, secrets SecretsManager, k8s KubernetesManager, bots *botenv.Registry, devMode bool, runtimeVersion string) *HelmHandler {
 	return &HelmHandler{
 		helm:       helm,
 		tmpl:       tmpl,
@@ -45,6 +50,7 @@ func NewHelmHandler(helm HelmManager, tmpl TemplateRenderer, botSecrets *service
 		bots:       bots,
 		onboarding: onboarding.NewEngine(bots),
 		devMode:    devMode,
+		runtimeVer: strings.TrimSpace(runtimeVersion),
 	}
 }
 
@@ -258,6 +264,7 @@ func (h *HelmHandler) Install(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ensureBuiltInPostgresPassword(&opts)
+	ensureRuntimeImageTag(opts.Values, h.runtimeVer, false)
 
 	// Fire install synchronously for immediate error handling, but do not wait
 	// on workload readiness (Helm service uses hook-only wait strategy).
@@ -344,6 +351,7 @@ func (h *HelmHandler) Upgrade(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "botType is required", http.StatusBadRequest)
 		return
 	}
+	ensureRuntimeImageTag(currentValues, h.runtimeVer, !hasExplicitImageTag(body.Values))
 
 	info, err := h.helm.Upgrade(r.Context(), name, namespace, botType, currentValues)
 	if err != nil {
@@ -1105,6 +1113,8 @@ func (h *HelmHandler) UpdateConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HelmHandler) upgradeWithRetry(ctx context.Context, name, botType string, values map[string]any) error {
+	ensureRuntimeImageTag(values, h.runtimeVer, true)
+
 	var upgradeErr error
 	for attempt := range 3 {
 		_, upgradeErr = h.helm.Upgrade(ctx, name, defaultNamespace(), service.BotType(botType), values)
@@ -1119,6 +1129,71 @@ func (h *HelmHandler) upgradeWithRetry(ctx context.Context, name, botType string
 		break
 	}
 	return upgradeErr
+}
+
+func normalizeReleaseImageTag(v string) string {
+	v = strings.TrimSpace(v)
+	v = strings.TrimPrefix(v, "v")
+	if v == "" {
+		return ""
+	}
+
+	parts := strings.Split(v, ".")
+	if len(parts) != 3 {
+		return ""
+	}
+	for _, p := range parts {
+		if p == "" {
+			return ""
+		}
+		for _, r := range p {
+			if r < '0' || r > '9' {
+				return ""
+			}
+		}
+	}
+	return v
+}
+
+func hasExplicitImageTag(values map[string]any) bool {
+	if values == nil {
+		return false
+	}
+	image, ok := values["image"].(map[string]any)
+	if !ok || image == nil {
+		return false
+	}
+	tag, ok := image["tag"]
+	if !ok || tag == nil {
+		return false
+	}
+	return strings.TrimSpace(fmt.Sprintf("%v", tag)) != ""
+}
+
+func ensureRuntimeImageTag(values map[string]any, runtimeVersion string, force bool) {
+	if values == nil {
+		return
+	}
+
+	tag := normalizeReleaseImageTag(runtimeVersion)
+	if tag == "" {
+		return
+	}
+
+	image, _ := values["image"].(map[string]any)
+	if image == nil {
+		image = make(map[string]any)
+		values["image"] = image
+	}
+
+	currentTag := ""
+	if rawTag, ok := image["tag"]; ok && rawTag != nil {
+		currentTag = strings.TrimSpace(fmt.Sprintf("%v", rawTag))
+	}
+	if !force && currentTag != "" {
+		return
+	}
+	image["tag"] = tag
 }
 
 // resolveSecretsForConfig resolves 1Password ExternalSecret references to their
