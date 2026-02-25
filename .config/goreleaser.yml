@@ -63,7 +63,7 @@ homebrew_casks:
     description: Kubernetes-native dashboard for AI bots
 
 dockers_v2:
-  - dockerfile: control-plane/Dockerfile
+  - dockerfile: .config/Dockerfile.release
     images:
       - ghcr.io/zackerydev/clawmachine
     tags:

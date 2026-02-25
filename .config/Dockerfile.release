@@ -1,0 +1,15 @@
+FROM alpine:3.23
+
+ARG TARGETARCH
+
+WORKDIR /app
+
+RUN addgroup -S clawmachine \
+    && adduser -S -G clawmachine -H -s /sbin/nologin clawmachine
+
+COPY linux/${TARGETARCH}/clawmachine /app/clawmachine
+COPY control-plane/templates /app/templates
+COPY control-plane/static /app/static
+
+USER clawmachine
+ENTRYPOINT ["/app/clawmachine"]
