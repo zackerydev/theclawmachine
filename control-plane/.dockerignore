@@ -1,0 +1,6 @@
+e2e/
+docs/
+**/*_test.go
+.git/
+*.md
+.gocache/

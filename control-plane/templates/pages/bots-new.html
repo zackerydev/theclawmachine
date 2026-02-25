@@ -1,0 +1,48 @@
+{{ define "bots-new" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Install Bot
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Install</span>
+        <h1>Choose a Bot Type</h1>
+        <p class="muted">Select a bot to begin the onboarding wizard.</p>
+      </div>
+      <a href="/" class="btn btn-secondary">Back to Bots</a>
+    </div>
+
+    <div class="cards-grid">
+      {{ range .BotConfigs }}
+        <a class="link-card" href="/bots/new?type={{ .Name }}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.5rem">
+            <div style="display:flex;align-items:center;gap:0.6rem">
+              <span style="font-size:1.25rem" aria-hidden="true">
+                {{ if eq .Name "openclaw" }}🦞
+                {{ else if eq .Name "ironclaw" }}🛡️
+                {{ else if eq .Name "picoclaw" }}🦐
+                {{ else if eq .Name "busybox" }}🔧
+                {{ end }}
+              </span>
+              <strong style="font-size:0.95rem;font-weight:600;color:var(--cm-text)">{{ .DisplayName }}</strong>
+            </div>
+            {{ if or (eq .Name "ironclaw") (eq .Name "picoclaw") }}
+              <span class="badge badge-warning badge-nodot" style="text-transform:uppercase;letter-spacing:0.08em">alpha</span>
+            {{ end }}
+          </div>
+          {{ if .Description }}
+            <p class="muted">{{ .Description }}</p>
+          {{ else }}
+            <p class="muted">Install and configure {{ .Name }}.</p>
+          {{ end }}
+          <p style="margin-top:0.75rem;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.06em;color:var(--cm-aqua);opacity:0.7">{{ .Name }} →</p>
+        </a>
+      {{ end }}
+    </div>
+  </section>
+{{ end }}

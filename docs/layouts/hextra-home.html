@@ -1,0 +1,247 @@
+{{ define "main" }}
+<div class="cm-home">
+
+  {{/* ===== HERO ===== */}}
+  <section class="cm-hero">
+
+    <div class="cm-hero-text">
+      <span class="cm-eyebrow">Kubernetes-native</span>
+
+      <h1 class="cm-hero-title">Hold onto<br>your bots.</h1>
+
+      <p class="cm-hero-subtitle">
+        OpenClaw-first operations for Kubernetes clusters.
+        One Helm install. One dashboard. Three bots.
+      </p>
+
+      <div class="cm-btn-group">
+        <a href="{{ "docs/getting-started" | relURL }}" class="cm-btn cm-btn-primary">
+          Get Started
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="https://github.com/zackerydev/clawmachine" class="cm-btn cm-btn-ghost" target="_blank" rel="noopener">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+
+      <div class="cm-hero-stats">
+        <span>3 bot types</span>
+        <span>Helm install</span>
+        <span>MIT license</span>
+        <span>Go + HTMX</span>
+      </div>
+    </div>
+
+    <div class="cm-hero-terminal">
+      <div class="cm-term-window">
+        <div class="cm-term-header">
+          <div class="cm-term-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="cm-term-title">terminal</span>
+        </div>
+        <div class="cm-term-body">
+<span class="cm-term-line"><span class="cm-term-prompt">$</span><span class="cm-term-cmd"> clawmachine status</span></span>
+<span class="cm-term-spacer"></span>
+<span class="cm-term-line"><span class="cm-term-box">╔═══════════════════════╗</span></span>
+<span class="cm-term-line"><span class="cm-term-box">║  ClawMachine Status   ║</span></span>
+<span class="cm-term-line"><span class="cm-term-box">╚═══════════════════════╝</span></span>
+<span class="cm-term-spacer"></span>
+<span class="cm-term-line"><span class="cm-term-th">NAME        NAMESPACE       STATUS</span></span>
+<span class="cm-term-line"><span class="cm-term-dim">────────────────────────────────────────────────────</span></span>
+<span class="cm-term-line"><span class="cm-term-out">cilium      kube-system     </span><span class="cm-term-ok">deployed</span></span>
+<span class="cm-term-line"><span class="cm-term-out">connect     1password       </span><span class="cm-term-ok">deployed</span></span>
+<span class="cm-term-line"><span class="cm-term-out">dorothy     claw-machine    </span><span class="cm-term-ok">healthy</span></span>
+<span class="cm-term-spacer"></span>
+<span class="cm-term-line"><span class="cm-term-prompt">$</span><span class="cm-cursor"></span></span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <div class="cm-divider"></div>
+
+  {{/* ===== KILLER FEATURES ===== */}}
+  <section class="cm-pillars cm-fade-in">
+    <div class="cm-pillars-header">
+      <span class="cm-section-label">// Why ClawMachine</span>
+      <h2 class="cm-pillars-title">Enterprise-grade security.<br>Zero extra infrastructure.</h2>
+      <p class="cm-pillars-sub">Every bot runs in a hardened, isolated environment — with the secrets management and network controls you'd expect from a production platform.</p>
+    </div>
+    <div class="cm-pillars-grid cm-stagger">
+      <div class="cm-pillar cm-fade-in">
+        <div class="cm-pillar-icon cm-pillar-icon--yellow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <div class="cm-pillar-num">01</div>
+        <h3 class="cm-pillar-title">Container Isolation</h3>
+        <p class="cm-pillar-desc">Each Claw bot runs in its own Kubernetes pod with dedicated resource limits and a strict security context. No shared runtimes, no cross-bot contamination.</p>
+      </div>
+      <div class="cm-pillar cm-fade-in">
+        <div class="cm-pillar-icon cm-pillar-icon--aqua">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="cm-pillar-num">02</div>
+        <h3 class="cm-pillar-title">Network Isolation &amp; Allow Lists</h3>
+        <p class="cm-pillar-desc">Kubernetes NetworkPolicy locks down egress by default. Configure per-bot domain allow lists so bots only reach exactly what they need — nothing more.</p>
+      </div>
+      <div class="cm-pillar cm-fade-in">
+        <div class="cm-pillar-icon cm-pillar-icon--orange">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="cm-pillar-num">03</div>
+        <h3 class="cm-pillar-title">1Password Vault Encryption</h3>
+        <p class="cm-pillar-desc">Secrets sync directly from your 1Password vault into Kubernetes via External Secrets Operator. Credentials never touch your dashboard and are never stored in plaintext.</p>
+      </div>
+      <div class="cm-pillar cm-fade-in">
+        <div class="cm-pillar-icon cm-pillar-icon--green">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <div class="cm-pillar-num">04</div>
+        <h3 class="cm-pillar-title">Automated Workspace Backups</h3>
+        <p class="cm-pillar-desc">Schedule recurring backups of bot workspace data to S3 or GitHub on a configurable cron. Restore on startup — one checkbox to recover from any incident.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cm-divider"></div>
+
+  {{/* ===== THE FLEET ===== */}}
+  <section class="cm-section cm-fade-in">
+    <span class="cm-section-label">// The Fleet</span>
+    <h2 class="cm-section-title">OpenClaw First</h2>
+    <div class="cm-bots-grid cm-stagger">
+      <a href="{{ "docs/bots" | relURL }}" class="cm-bot-card cm-bot-card--open cm-fade-in">
+        <span class="cm-bot-icon">🐙</span>
+        <h3 class="cm-bot-name">OpenClaw</h3>
+        <p class="cm-bot-desc">Primary production path. General-purpose bot with plugins and channel integrations for real cluster operations.</p>
+        <span class="cm-bot-tag">Recommended</span>
+      </a>
+      <a href="{{ "docs/bots" | relURL }}" class="cm-bot-card cm-bot-card--iron cm-fade-in">
+        <span class="cm-bot-icon">🦾</span>
+        <h3 class="cm-bot-name">IronClaw</h3>
+        <p class="cm-bot-desc">Secure AI assistant built in Rust by NEAR AI. Privacy-first with WASM sandboxing, prompt injection defense, and persistent memory.</p>
+        <span class="cm-bot-tag">Beta</span>
+      </a>
+      <a href="{{ "docs/bots" | relURL }}" class="cm-bot-card cm-bot-card--pico cm-fade-in">
+        <span class="cm-bot-icon">🦀</span>
+        <h3 class="cm-bot-name">PicoClaw</h3>
+        <p class="cm-bot-desc">Lightweight and fast. A minimal Go bot for health checks, simple automations, and proving your cluster works.</p>
+        <span class="cm-bot-tag">Beta</span>
+      </a>
+    </div>
+  </section>
+
+  <div class="cm-divider"></div>
+
+  {{/* ===== HOW IT WORKS ===== */}}
+  <section class="cm-section cm-fade-in">
+    <span class="cm-section-label">// How It Works</span>
+    <h2 class="cm-section-title">Three Steps. That's It.</h2>
+    <div class="cm-steps-grid">
+      <div class="cm-step">
+        <span class="cm-step-number">01</span>
+        <h3 class="cm-step-title">Install to your cluster</h3>
+        <p class="cm-step-desc">One command sets up ClawMachine on any Kubernetes cluster — local or production. The interactive installer detects your environment.</p>
+        <code class="cm-step-code">curl -fsSL https://theclawmachine.dev/install.sh | bash</code>
+      </div>
+      <div class="cm-step">
+        <span class="cm-step-number">02</span>
+        <h3 class="cm-step-title">Deploy OpenClaw</h3>
+        <p class="cm-step-desc">Install OpenClaw as your default bot path. Use PicoClaw and IronClaw for beta testing and validation workloads.</p>
+      </div>
+      <div class="cm-step">
+        <span class="cm-step-number">03</span>
+        <h3 class="cm-step-title">Manage from one place</h3>
+        <p class="cm-step-desc">Monitor health, view logs, update config, and uninstall — all from a single dark-mode dashboard. No YAML wrangling.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="cm-divider"></div>
+
+  {{/* ===== FEATURES ===== */}}
+  <section class="cm-section cm-fade-in">
+    <span class="cm-section-label">// Why ClawMachine</span>
+    <h2 class="cm-section-title">Built Different</h2>
+    <div class="cm-features-outer">
+      <div class="cm-features-grid cm-stagger">
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3 class="cm-feature-title">One Helm Install</h3>
+          <p class="cm-feature-desc">No complex setup. No cloud dependencies. Helm install and you're running in minutes.</p>
+        </div>
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3 class="cm-feature-title">Your Cluster, Your Bots</h3>
+          <p class="cm-feature-desc">Everything on your infrastructure. Bot data never leaves. Secrets stay in Kubernetes.</p>
+        </div>
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+          <h3 class="cm-feature-title">Built for Operators</h3>
+          <p class="cm-feature-desc">Real-time health checks, per-bot config, and clean uninstalls. For people who run infrastructure.</p>
+        </div>
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          </div>
+          <h3 class="cm-feature-title">Secrets Management</h3>
+          <p class="cm-feature-desc">Native External Secrets Operator integration. Connect 1Password or any supported backend.</p>
+        </div>
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="cm-feature-title">No JS Framework</h3>
+          <p class="cm-feature-desc">Core stack — Go, HTML templates, HTMX, Bootstrap. Server-rendered, fast, and lightweight.</p>
+        </div>
+        <div class="cm-feature cm-fade-in">
+          <div class="cm-feature-icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </div>
+          <h3 class="cm-feature-title">Open Source</h3>
+          <p class="cm-feature-desc">MIT licensed. Read the code, fork it, extend it. Built in the open on GitHub.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cm-divider"></div>
+
+  {{/* ===== CTA ===== */}}
+  <section class="cm-cta cm-fade-in">
+    <div class="cm-cta-inner">
+      <div>
+        <h2 class="cm-cta-title">Ready to grab your bots?</h2>
+        <p class="cm-cta-subtitle">Deploy ClawMachine to your cluster in minutes.</p>
+      </div>
+      <a href="{{ "docs/getting-started" | relURL }}" class="cm-btn cm-btn-primary">
+        Get Started
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function() {
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) entry.target.classList.add('cm-visible');
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.cm-fade-in').forEach(function(el) {
+    observer.observe(el);
+  });
+})();
+</script>
+{{ end }}

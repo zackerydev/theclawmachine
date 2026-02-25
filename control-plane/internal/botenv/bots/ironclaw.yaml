@@ -1,0 +1,258 @@
+name: ironclaw
+displayName: IronClaw
+description: Secure AI assistant powered by NEAR AI with PostgreSQL persistence
+order: 20
+configFormat: env
+
+sections:
+  - key: llm
+    label: LLM Provider
+    icon: cpu-chip
+    fields:
+      - key: llmBackend
+        label: Backend
+        type: select
+        default: "nearai"
+        valuesPath: "llm.backend"
+        options:
+          - label: NEAR AI
+            value: nearai
+          - label: Anthropic
+            value: anthropic
+          - label: OpenAI
+            value: openai
+          - label: Ollama
+            value: ollama
+          - label: OpenAI-Compatible
+            value: openai_compatible
+          - label: Tinfoil (confidential inference)
+            value: tinfoil
+
+      - key: llmModel
+        label: Model
+        type: model
+        default: "zai-org/GLM-5-FP8"
+        valuesPath: "llm.model"
+        fontMono: true
+        helpText: "Search models from OpenRouter, or type any model ID for your provider"
+
+      - key: nearaiSessionToken
+        label: NEAR AI Session Token
+        type: password
+        placeholder: "sess_..."
+        showWhen: "llmBackend=nearai"
+        valuesPath: "secrets.nearaiSessionToken"
+        secret: true
+        fontMono: true
+        helpText: "Or use NEARAI_API_KEY from cloud.near.ai instead"
+
+      - key: nearaiApiKey
+        label: NEAR AI API Key
+        type: password
+        placeholder: "API key from cloud.near.ai"
+        showWhen: "llmBackend=nearai"
+        valuesPath: "secrets.nearaiApiKey"
+        secret: true
+        fontMono: true
+        helpText: "Alternative to session token auth"
+
+      - key: nearaiBaseUrl
+        label: NEAR AI Base URL
+        type: text
+        default: "https://private.near.ai"
+        placeholder: "https://private.near.ai"
+        showWhen: "llmBackend=nearai"
+        valuesPath: "llm.nearaiBaseUrl"
+        fontMono: true
+
+      - key: anthropicApiKey
+        label: Anthropic API Key
+        type: password
+        placeholder: "sk-ant-..."
+        showWhen: "llmBackend=anthropic"
+        valuesPath: "secrets.anthropicApiKey"
+        secret: true
+        fontMono: true
+
+      - key: openaiApiKey
+        label: OpenAI API Key
+        type: password
+        placeholder: "sk-..."
+        showWhen: "llmBackend=openai"
+        valuesPath: "secrets.openaiApiKey"
+        secret: true
+        fontMono: true
+
+      - key: ollamaBaseUrl
+        label: Ollama Base URL
+        type: text
+        placeholder: "http://localhost:11434"
+        showWhen: "llmBackend=ollama"
+        valuesPath: "llm.ollamaBaseUrl"
+        fontMono: true
+
+      - key: compatBaseUrl
+        label: API Base URL
+        type: text
+        placeholder: "http://localhost:1234/v1 or https://openrouter.ai/api/v1"
+        showWhen: "llmBackend=openai_compatible"
+        valuesPath: "llm.compatBaseUrl"
+        fontMono: true
+
+      - key: compatApiKey
+        label: API Key
+        type: password
+        placeholder: "sk-or-... (OpenRouter) or local server key"
+        showWhen: "llmBackend=openai_compatible"
+        valuesPath: "secrets.compatApiKey"
+        secret: true
+        fontMono: true
+
+      - key: compatExtraHeaders
+        label: Extra Headers
+        type: text
+        placeholder: "HTTP-Referer:https://myapp.com,X-Title:MyApp"
+        showWhen: "llmBackend=openai_compatible"
+        valuesPath: "llm.compatExtraHeaders"
+        fontMono: true
+        helpText: "Comma-separated key:value pairs (useful for OpenRouter)"
+
+  - key: gateway
+    label: Gateway
+    icon: server
+    fields:
+      - key: gatewayAuthToken
+        label: Gateway Auth Token
+        type: password
+        placeholder: "Bearer token for gateway API"
+        required: true
+        valuesPath: "secrets.gatewayAuthToken"
+        secret: true
+        fontMono: true
+
+  - key: channels
+    label: Channels
+    icon: chat-bubble-left-right
+    description: "Configure messaging channels"
+    collapsible: true
+    fields:
+      - key: slackBotToken
+        label: Slack Bot Token
+        type: password
+        placeholder: "xoxb-..."
+        valuesPath: "secrets.slackBotToken"
+        secret: true
+        fontMono: true
+
+      - key: slackAppToken
+        label: Slack App Token
+        type: password
+        placeholder: "xapp-..."
+        valuesPath: "secrets.slackAppToken"
+        secret: true
+        fontMono: true
+
+      - key: slackSigningSecret
+        label: Slack Signing Secret
+        type: password
+        valuesPath: "secrets.slackSigningSecret"
+        secret: true
+        fontMono: true
+
+      - key: telegramBotToken
+        label: Telegram Bot Token
+        type: password
+        placeholder: "Token from @BotFather"
+        valuesPath: "secrets.telegramBotToken"
+        secret: true
+        fontMono: true
+
+      - key: httpWebhookSecret
+        label: HTTP Webhook Secret
+        type: password
+        placeholder: "Secret for webhook verification"
+        valuesPath: "secrets.httpWebhookSecret"
+        secret: true
+        fontMono: true
+        helpText: "For custom HTTP webhook integrations"
+
+  - key: agent
+    label: Agent Settings
+    icon: cog
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: agentName
+        label: Agent Name
+        type: text
+        default: "ironclaw"
+        placeholder: "ironclaw"
+        valuesPath: "agent.name"
+
+      - key: agentMaxParallelJobs
+        label: Max Parallel Jobs
+        type: text
+        default: "5"
+        placeholder: "5"
+        valuesPath: "agent.maxParallelJobs"
+
+      - key: agentJobTimeout
+        label: Job Timeout (seconds)
+        type: text
+        default: "3600"
+        placeholder: "3600"
+        valuesPath: "agent.jobTimeoutSecs"
+
+      - key: agentUsePlanning
+        label: Enable Planning
+        type: checkbox
+        default: "true"
+        valuesPath: "agent.usePlanning"
+        helpText: "Run a planning phase before tool execution"
+
+  - key: heartbeat
+    label: Heartbeat
+    icon: heart
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: heartbeatEnabled
+        label: Enable Heartbeat
+        type: checkbox
+        valuesPath: "heartbeat.enabled"
+
+      - key: heartbeatInterval
+        label: Interval (seconds)
+        type: text
+        default: "1800"
+        placeholder: "1800"
+        showWhen: "heartbeatEnabled=true"
+        valuesPath: "heartbeat.intervalSecs"
+
+  - key: safety
+    label: Safety
+    icon: shield-check
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: safetyMaxOutput
+        label: Max Output Length
+        type: text
+        default: "100000"
+        placeholder: "100000"
+        valuesPath: "safety.maxOutputLength"
+
+      - key: injectionCheck
+        label: Prompt Injection Detection
+        type: checkbox
+        default: "true"
+        valuesPath: "safety.injectionCheckEnabled"
+        helpText: "Detect and block prompt injection attempts"
+
+      - key: selfRepairInterval
+        label: Self-Repair Check Interval (seconds)
+        type: text
+        default: "60"
+        placeholder: "60"
+        valuesPath: "safety.selfRepairIntervalSecs"
+        helpText: "How often to check for stuck operations"

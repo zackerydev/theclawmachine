@@ -1,0 +1,148 @@
+image:
+  repository: ghcr.io/zackerydev/openclaw
+  tag: "2026.2.21"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+# OpenClaw user home used by the CLI (OPENCLAW_HOME).
+# OpenClaw stores config under "$OPENCLAW_HOME/.openclaw".
+openclawHome: "/root"
+
+# Mount target for persistent OpenClaw state.
+# This should match "$OPENCLAW_HOME/.openclaw".
+openclawConfigDir: "/root/.openclaw"
+
+# OpenClaw version to install (npm package version)
+openclawVersion: "2026.2.21"
+
+# Gateway settings
+gateway:
+  port: 18789
+  # Auth mode: token or password
+  authMode: "token"
+
+service:
+  type: ClusterIP
+  port: 18789
+
+# LLM provider configuration
+# Supported: apiKey (Anthropic), gemini-api-key, openai-api-key, openrouter-api-key, cloudflare-ai-gateway-api-key
+auth:
+  choice: "apiKey"
+  # Model override (optional — defaults to provider default)
+  model: ""
+
+# Sensitive values — injected as a Secret
+# In production, use external-secrets or sealed-secrets instead
+secrets:
+  # Gateway auth token (protects the gateway API)
+  gatewayToken: ""
+  # LLM provider API key (matched to auth.choice)
+  anthropicApiKey: ""
+  geminiApiKey: ""
+  openaiApiKey: ""
+  openrouterApiKey: ""
+  # Cloudflare AI Gateway (if using cloudflare-ai-gateway auth choice)
+  cloudflareAiGatewayApiKey: ""
+  # Channel tokens
+  discordBotToken: ""
+  telegramBotToken: ""
+  slackBotToken: ""
+  slackAppToken: ""
+
+# Channel configuration
+channels:
+  discord:
+    enabled: false
+  telegram:
+    enabled: false
+  slack:
+    enabled: false
+
+# Agent configuration
+agent:
+  name: ""
+  # Default model (e.g., "anthropic/claude-sonnet-4-5-20250929")
+  defaultModel: ""
+  # Workspace files to mount (from ConfigMap)
+  workspace:
+    enabled: true
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    cpu: "1"
+    memory: 1536Mi
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: ""
+
+healthCheck:
+  # Probe strategy: tcpSocket (default), httpGet, or exec.
+  # exec is heavier because it launches a CLI process per probe.
+  type: tcpSocket
+  # Used only when type=httpGet
+  path: /health
+  port: 18789
+  initialDelaySeconds: 30
+  periodSeconds: 15
+  # Increase timeout to reduce false negatives on slower nodes.
+  timeoutSeconds: 30
+  # Avoid restarts/flapping when status checks are briefly slow.
+  failureThreshold: 10
+
+networkPolicy:
+  # Bots need egress for LLM API calls
+  ingress: false
+  egress: true
+  # Use CiliumNetworkPolicy for DNS-aware egress filtering (requires Cilium CNI)
+  useCilium: false
+  # Allowed FQDNs for egress (only enforced when useCilium: true)
+  # Supports wildcards: "*.openai.com" matches "api.openai.com"
+  allowedDomains: []
+  # Optional: restrict allowed ports (default: all ports to allowed domains)
+  # allowedPorts:
+  #   - port: 443
+  #     protocol: TCP
+
+env: {}
+
+backup:
+  enabled: false
+  restoreOnStartup: false
+  schedule: "0 */6 * * *"
+  mode: filesystem
+  image:
+    repository: ghcr.io/zackerydev/clawmachine
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  s3:
+    endpoint: ""
+    bucket: ""
+    region: "us-east-1"
+    prefix: ""
+  credentials:
+    accessKeyIdSecretRef:
+      name: ""
+      key: "value"
+    secretAccessKeySecretRef:
+      name: ""
+      key: "value"
+  credentialsSecret: ""
+
+envSecrets: []
+
+# Optional managed OpenClaw config file content.
+# When enabled, startup writes this JSON to $OPENCLAW_HOME/openclaw.json
+# before reconciling auth/channel settings.
+configFile:
+  enabled: false
+  content: ""
+
+# Soul template files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md)
+# Created by ClawMachine during install when a persona is selected.

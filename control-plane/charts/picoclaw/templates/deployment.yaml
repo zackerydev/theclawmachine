@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "picoclaw.fullname" . }}
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "picoclaw.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "picoclaw.labels" . | nindent 8 }}
+    spec:
+      {{- if or .Values.configFile.enabled (and .Values.backup.enabled .Values.backup.restoreOnStartup) }}
+      initContainers:
+        {{- if and .Values.backup.enabled .Values.backup.restoreOnStartup }}
+        - name: restore-workspace
+          image: "{{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}"
+          imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+          args:
+            - restore
+            - --mode
+            - {{ .Values.backup.mode }}
+            - --workspace
+            - /workspace
+            - --bucket
+            - {{ .Values.backup.s3.bucket | quote }}
+            - --endpoint
+            - {{ .Values.backup.s3.endpoint | quote }}
+            - --region
+            - {{ .Values.backup.s3.region | quote }}
+            - --prefix
+            - {{ .Values.backup.s3.prefix | default (include "picoclaw.fullname" .) | quote }}
+          {{- $accessName := .Values.backup.credentials.accessKeyIdSecretRef.name }}
+          {{- $accessKey := .Values.backup.credentials.accessKeyIdSecretRef.key | default "value" }}
+          {{- $secretName := .Values.backup.credentials.secretAccessKeySecretRef.name }}
+          {{- $secretKey := .Values.backup.credentials.secretAccessKeySecretRef.key | default "value" }}
+          {{- if or $accessName $secretName }}
+          env:
+            {{- if $accessName }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $accessName }}
+                  key: {{ $accessKey }}
+            {{- end }}
+            {{- if $secretName }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretKey }}
+            {{- end }}
+          {{- else if .Values.backup.credentialsSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backup.credentialsSecret }}
+          {{- else if .Values.backup.secretName }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backup.secretName }}
+          {{- end }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+        {{- end }}
+        {{- if .Values.configFile.enabled }}
+        - name: config-init
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              target="{{ .Values.configFile.mountPath }}/{{ .Values.configFile.fileName }}"
+              if [ ! -f "$target" ]; then
+                echo "config-init: seeding $target"
+                cp /config-seed/{{ .Values.configFile.fileName }} "$target"
+              else
+                echo "config-init: $target already exists, skipping"
+              fi
+          volumeMounts:
+            - name: workspace
+              mountPath: {{ .Values.configFile.mountPath }}
+            - name: config-seed
+              mountPath: /config-seed
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: picoclaw
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- if .Values.envSecrets }}
+          env:
+            {{- range .Values.envSecrets }}
+            - name: {{ .envVar }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretRef.name }}
+                  key: {{ .secretRef.key }}
+            {{- end }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "picoclaw.fullname" . }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: workspace
+              mountPath: {{ .Values.configFile.mountPath }}
+      volumes:
+        - name: workspace
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "picoclaw.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.configFile.enabled }}
+        - name: config-seed
+          secret:
+            secretName: {{ include "picoclaw.fullname" . }}-config
+        {{- end }}

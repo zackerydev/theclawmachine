@@ -1,0 +1,6 @@
+apiVersion: v2
+name: openclaw
+description: OpenClaw bot for ClawMachine — containerized AI assistant with gateway, channels, and persistence
+type: application
+version: 0.1.0
+appVersion: "2026.2.21"

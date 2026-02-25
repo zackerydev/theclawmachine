@@ -1,0 +1,40 @@
+{{- if .Values.networkPolicy.useCilium }}
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "busybox.fullname" . }}
+  labels:
+    {{- include "busybox.labels" . | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "busybox.selectorLabels" . | nindent 6 }}
+  egress:
+    # Allow DNS resolution (required for toFQDNs to work)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+    {{- if .Values.networkPolicy.allowedDomains }}
+    # Allow egress only to specified FQDNs
+    - toFQDNs:
+        {{- range .Values.networkPolicy.allowedDomains }}
+        - matchPattern: {{ . | quote }}
+        {{- end }}
+    {{- end }}
+    {{- if .Values.networkPolicy.egress }}
+    # Fallback: allow all egress when explicitly enabled (testing)
+    - {}
+    {{- end }}
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+    - {}
+  {{- end }}
+{{- end }}

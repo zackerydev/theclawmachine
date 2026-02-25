@@ -1,0 +1,106 @@
+[env]
+_.file = ".env"
+
+[tools]
+go = "1.26.0"
+tilt = "0.36.3"
+kind = "0.31.0"
+kubectl = "1.35.1"
+helm = "4.1.1"
+lefthook = "2.1.1"
+"golangci-lint" = "2.10.1"
+k9s = "0.50.18"
+hugo = "0.156.0"
+helm-cr = "1.8.1"
+goreleaser = "latest"
+actionlint = "latest"
+
+[hooks.enter]
+shell = "bash"
+script = "lefthook install"
+
+[tasks.charts]
+description = "Package Helm charts as .tgz for go:embed"
+run = "cd control-plane && mkdir -p internal/service/charts && for chart in picoclaw ironclaw openclaw busybox clawmachine; do COPYFILE_DISABLE=1 tar -czf internal/service/charts/$chart.tgz -C charts $chart; done && cp charts/vendor/*.tgz internal/service/charts/ && echo '✓ Charts packaged'"
+
+[tasks.build]
+description = "Build the ClawMachine binary"
+depends = ["charts"]
+run = "cd control-plane && go build -o clawmachine ./cmd/clawmachine/ && echo '✓ Binary built'"
+
+[tasks.test]
+description = "Run Go tests"
+depends = ["charts"]
+run = "cd control-plane && go test -race ./..."
+
+[tasks."test:ci"]
+description = "Run Go tests with coverage (CI mode)"
+depends = ["charts"]
+run = "cd control-plane && go test -race -coverprofile=coverage.out ./..."
+
+[tasks."test:coverage"]
+description = "Run tests with coverage report"
+depends = ["charts"]
+run = "cd control-plane && go test -coverprofile=coverage.out ./... && go tool cover -func=coverage.out | tail -1 && echo '' && echo 'Coverage HTML: go tool cover -html=coverage.out'"
+
+[tasks."test:all"]
+description = "Run unit tests + E2E API/CLI tests (starts --web server automatically)"
+depends = ["charts"]
+run = "bash .config/scripts/test-all.sh"
+
+[tasks.fix]
+description = "Run go fix and check for drift"
+depends = ["charts"]
+run = "cd control-plane && go fix ./... && git diff --exit-code || (echo 'go fix made changes - commit them' && exit 1)"
+
+[tasks.lint]
+description = "Run golangci-lint"
+depends = ["charts"]
+run = "cd control-plane && golangci-lint run ./..."
+
+[tasks.vet]
+description = "Run go vet"
+depends = ["charts"]
+run = "cd control-plane && go vet ./..."
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "cd control-plane && rm -rf internal/service/charts/ clawmachine && echo '✓ Build artifacts cleaned'"
+
+[tasks.e2e]
+description = "Full lifecycle E2E: setup → run → teardown (requires kind + 1Password creds)"
+run = "bash .config/scripts/e2e.sh"
+
+[tasks."e2e:setup"]
+description = "Build bot images, create kind cluster, install infra (Cilium + ESO)"
+run = "bash .config/scripts/e2e-setup.sh"
+
+[tasks."e2e:run"]
+description = "Start local --web server, run lifecycle tests against kind cluster"
+run = "bash .config/scripts/e2e-run.sh"
+
+[tasks."e2e:teardown"]
+description = "Remove test bots and verify namespace is clean"
+run = "bash .config/scripts/e2e-teardown.sh"
+
+[tasks."e2e:local"]
+description = "Start --web server + run API/CLI smoke tests (no cluster needed)"
+depends = ["charts"]
+run = "bash .config/scripts/e2e-local.sh"
+
+[tasks."e2e:cleanup"]
+description = "Delete the E2E kind cluster"
+run = "kind delete cluster --name claw-machine"
+
+[tasks."docs:serve"]
+description = "Serve the docs site locally with Hugo"
+run = "hugo serve"
+dir = "docs"
+
+[tasks."docs:check"]
+description = "Build docs site"
+run = "cd docs && hugo --minify"
+
+[tasks.dev]
+description = "Run local Tilt development environment"
+run = "tilt up -f .config/Tiltfile"

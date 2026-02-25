@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "busybox.fullname" . }}
+  labels:
+    {{- include "busybox.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "busybox.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "busybox.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: toolbox
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "=== ClawMachine Toolbox ==="
+              echo "Tools: openclaw, picoclaw, ironclaw, node, npm, git, curl, jq"
+              echo "Shell in: kubectl exec -it deploy/{{ include "busybox.fullname" . }} -- bash"
+              echo "✓ Ready"
+              exec sleep infinity
+          {{- if .Values.envSecrets }}
+          env:
+          {{- range .Values.envSecrets }}
+            - name: {{ .envVar }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName }}
+                  key: {{ .secretKey }}
+          {{- end }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.configFile.enabled }}
+          volumeMounts:
+            - name: config-file
+              mountPath: {{ .Values.configFile.mountPath }}/{{ .Values.configFile.fileName }}
+              subPath: {{ .Values.configFile.fileName }}
+          {{- end }}
+      {{- if .Values.configFile.enabled }}
+      volumes:
+        {{- if .Values.configFile.enabled }}
+        - name: config-file
+          secret:
+            secretName: {{ include "busybox.fullname" . }}-config
+        {{- end }}
+      {{- end }}

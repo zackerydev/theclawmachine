@@ -1,0 +1,78 @@
+{{ define "network-flows" }}
+  {{ if .Error }}
+    <div class="alert alert-warning">{{ .Error }}</div>
+  {{ else if and (not .Allowed) (not .Blocked) (eq .InternalTotalCount 0) }}
+    <p class="muted">No network flows recorded yet.</p>
+  {{ else }}
+    <div class="network-summary">
+      <span class="badge badge-success">{{ .AllowedCount }} allowed</span>
+      <span class="badge badge-error">{{ .BlockedCount }} blocked</span>
+    </div>
+
+    {{ if .Blocked }}
+      <div class="network-group">
+        <h3>Blocked Requests</h3>
+        {{ range .Blocked }}
+          <div class="network-row blocked">
+            <span class="network-dest">{{ .Destination }}{{ if .Port }}:{{ .Port }}{{ end }}</span>
+            {{ if gt .Count 1 }}<span class="badge badge-outline">x{{ .Count }}</span>{{ end }}
+            {{ if .DNSQuery }}<code>{{ .DNSQuery }}</code>{{ end }}
+            <span class="muted">{{ .Time }}</span>
+          </div>
+        {{ end }}
+      </div>
+    {{ end }}
+
+    {{ if .Allowed }}
+      <div class="network-group">
+        <h3>Allowed Requests</h3>
+        {{ range .Allowed }}
+          <div class="network-row allowed">
+            <span class="network-dest">{{ .Destination }}{{ if .Port }}:{{ .Port }}{{ end }}</span>
+            {{ if gt .Count 1 }}<span class="badge badge-outline">x{{ .Count }}</span>{{ end }}
+            {{ if .DNSQuery }}<code>{{ .DNSQuery }}</code>{{ end }}
+            <span class="muted">{{ .Time }}</span>
+          </div>
+        {{ end }}
+      </div>
+    {{ end }}
+
+    {{ if gt .InternalTotalCount 0 }}
+      <details class="network-group">
+        <summary>
+          Internal Requests
+          <span class="badge badge-ghost">{{ .InternalAllowedCount }} allowed</span>
+          <span class="badge badge-ghost">{{ .InternalBlockedCount }} blocked</span>
+        </summary>
+
+        {{ if .InternalBlocked }}
+          <div class="network-group">
+            <h3>Internal Blocked</h3>
+            {{ range .InternalBlocked }}
+              <div class="network-row blocked">
+                <span class="network-dest">{{ .Destination }}{{ if .Port }}:{{ .Port }}{{ end }}</span>
+                {{ if gt .Count 1 }}<span class="badge badge-outline">x{{ .Count }}</span>{{ end }}
+                {{ if .DNSQuery }}<code>{{ .DNSQuery }}</code>{{ end }}
+                <span class="muted">{{ .Time }}</span>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{ if .InternalAllowed }}
+          <div class="network-group">
+            <h3>Internal Allowed</h3>
+            {{ range .InternalAllowed }}
+              <div class="network-row allowed">
+                <span class="network-dest">{{ .Destination }}{{ if .Port }}:{{ .Port }}{{ end }}</span>
+                {{ if gt .Count 1 }}<span class="badge badge-outline">x{{ .Count }}</span>{{ end }}
+                {{ if .DNSQuery }}<code>{{ .DNSQuery }}</code>{{ end }}
+                <span class="muted">{{ .Time }}</span>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+      </details>
+    {{ end }}
+  {{ end }}
+{{ end }}

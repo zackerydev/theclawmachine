@@ -1,0 +1,66 @@
+{{ define "bots" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Bots
+{{ end }}
+
+{{ define "content" }}
+  <section id="bots-page" hx-get="/" hx-trigger="every 4s" hx-swap="outerHTML">
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// The Fleet</span>
+        <h1>Claw Bots</h1>
+        <p class="muted">All installed bots in your cluster.</p>
+      </div>
+      <a href="/bots/new" class="btn btn-primary">Install Bot</a>
+    </div>
+
+    {{ if .Releases }}
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ range .Releases }}
+                <tr>
+                  <td><strong><a href="/bots/{{ .Name }}/page">{{ .Name }}</a></strong></td>
+                  <td><span class="mono" style="font-size:0.82rem;color:var(--cm-text-muted)">{{ .BotType }}</span></td>
+                  <td>
+                    {{ if eq .Status "deployed" }}
+                      <span class="badge badge-success">deployed</span>
+                    {{ else if eq .Status "failed" }}
+                      <span class="badge badge-error">failed</span>
+                    {{ else if eq .Status "pending-install" }}
+                      <span class="badge badge-warning">installing</span>
+                    {{ else if eq .Status "pending-upgrade" }}
+                      <span class="badge badge-warning">upgrading</span>
+                    {{ else if eq .Status "uninstalling" }}
+                      <span class="badge badge-warning">uninstalling</span>
+                    {{ else }}
+                      <span class="badge badge-ghost">{{ .Status }}</span>
+                    {{ end }}
+                  </td>
+                  <td style="color:var(--cm-text-dim);font-size:0.82rem">{{ .Updated }}</td>
+                </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {{ else }}
+      <div class="card" style="text-align:center;padding:3rem 1.25rem">
+        <p style="color:var(--cm-text-dim);font-family:'IBM Plex Mono',monospace;font-size:0.75rem;letter-spacing:0.06em;margin-bottom:1rem">// no bots installed</p>
+        <a href="/bots/new" class="btn btn-primary">Install your first bot</a>
+      </div>
+    {{ end }}
+  </section>
+{{ end }}

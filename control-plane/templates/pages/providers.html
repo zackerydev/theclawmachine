@@ -1,0 +1,216 @@
+{{ define "providers" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Providers
+{{ end }}
+
+{{ define "content" }}
+  <section
+    id="providers-page"
+    {{ if .Configured }}
+      hx-get="/settings/providers"
+      hx-trigger="every 2s"
+      hx-target="#providers-page"
+      hx-select="#providers-page"
+      hx-swap="outerHTML"
+    {{ end }}
+  >
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Settings</span>
+        <h1>Secret Providers</h1>
+        <p class="muted">1Password Connect is currently supported.</p>
+      </div>
+      <a href="/settings" class="btn btn-secondary">← Settings</a>
+    </div>
+
+    <div id="settings-error"></div>
+
+    {{ if .Configured }}
+      <div class="card" style="border-left: 3px solid var(--cm-aqua)">
+        <span class="eyebrow">// Configured Provider</span>
+        <div class="kv-grid" style="margin-bottom:1rem">
+          <div>
+            <div class="label">Provider</div>
+            <div style="font-size:0.9rem">{{ .Provider }}</div>
+          </div>
+          <div>
+            <div class="label">Store Name</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:var(--cm-text-muted)">{{ .Name }}</div>
+          </div>
+          <div>
+            <div class="label">Connect Host</div>
+            <div><code>{{ .ConnectHost }}</code></div>
+          </div>
+          <div>
+            <div class="label">Vault</div>
+            <div style="font-size:0.9rem">{{ .VaultName }}</div>
+          </div>
+          <div>
+            <div class="label">Status</div>
+            <div>
+              {{ if .Ready }}
+                <span id="provider-status" class="badge badge-success">Ready</span>
+              {{ else }}
+                <span
+                  id="provider-status"
+                  class="badge badge-warning"
+                  hx-get="/settings/status"
+                  hx-trigger="every 3s"
+                  hx-target="#provider-status"
+                  hx-swap="outerHTML"
+                >Not Ready</span>
+              {{ end }}
+            </div>
+          </div>
+          {{ if .Message }}
+            <div>
+              <div class="label">Message</div>
+              <div style="font-size:0.875rem;color:var(--cm-text-muted)">{{ .Message }}</div>
+            </div>
+          {{ end }}
+        </div>
+
+        {{ if .Connect }}
+          <div class="divider"></div>
+          <div class="row">
+            <div class="label">Connect Server</div>
+            <div>
+              {{ if .Connect.Installed }}
+                {{ if .Connect.Ready }}
+                  <span class="badge badge-success">Installed and Ready</span>
+                {{ else }}
+                  <span class="badge badge-warning">Installed, starting up</span>
+                {{ end }}
+              {{ else }}
+                <span class="badge badge-ghost">Not installed in cluster</span>
+              {{ end }}
+            </div>
+          </div>
+        {{ end }}
+
+        <div class="actions">
+          <button
+            class="btn btn-danger-outline"
+            hx-delete="/settings/provider"
+            hx-confirm="Remove configured provider?"
+            hx-target="#settings-error"
+            hx-swap="innerHTML"
+          >
+            Remove Provider
+          </button>
+          {{ if and .Connect .Connect.Installed }}
+            <button
+              class="btn btn-danger-outline"
+              hx-delete="/settings/connect"
+              hx-confirm="Uninstall in-cluster 1Password Connect?"
+              hx-target="#settings-error"
+              hx-swap="innerHTML"
+            >
+              Uninstall Connect
+            </button>
+          {{ end }}
+        </div>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">// Reconfigure</span>
+        <form
+          method="post"
+          action="/settings/provider"
+          hx-post="/settings/provider"
+          hx-target="#settings-error"
+          hx-swap="innerHTML"
+        >
+          <div class="form-grid">
+            <label>
+              <span class="label">Connect Host</span>
+              <input type="url" name="connectHost" value="{{ .ConnectHost }}" required />
+            </label>
+            <label>
+              <span class="label">Connect Token</span>
+              <input type="password" name="connectToken" required />
+            </label>
+            <label>
+              <span class="label">Vault Name</span>
+              <input type="text" name="vaultName" value="{{ .VaultName }}" required />
+            </label>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    {{ else }}
+      <div class="cards-grid">
+        <div class="card">
+          <span class="eyebrow">// In-cluster</span>
+          <h2 style="margin-bottom:0.4rem">Install 1Password Connect</h2>
+          <p class="muted" style="margin-bottom:1rem">Installs Connect in-cluster and configures ESO in one step.</p>
+          <form
+            method="post"
+            action="/settings/connect/install"
+            hx-post="/settings/connect/install"
+            hx-target="#settings-error"
+            hx-swap="innerHTML"
+            hx-disabled-elt="button[type='submit']"
+          >
+            <div class="form-grid">
+              <label>
+                <span class="label">Credentials JSON</span>
+                <textarea name="credentialsJson" rows="8" placeholder='{"version":"2"}' required></textarea>
+              </label>
+              <label>
+                <span class="label">Access Token</span>
+                <input type="password" name="token" required />
+              </label>
+              <label>
+                <span class="label">Vault Name</span>
+                <input type="text" name="vaultName" required />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">
+                <span class="install-btn-idle">Install and Configure</span>
+                <span class="htmx-indicator" aria-live="polite">Installing...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <span class="eyebrow">// External</span>
+          <h2 style="margin-bottom:0.4rem">Use Existing Connect</h2>
+          <p class="muted" style="margin-bottom:1rem">Point ESO at an already-running 1Password Connect instance.</p>
+          <form
+            method="post"
+            action="/settings/provider"
+            hx-post="/settings/provider"
+            hx-target="#settings-error"
+            hx-swap="innerHTML"
+          >
+            <div class="form-grid">
+              <label>
+                <span class="label">Connect Host</span>
+                <input type="url" name="connectHost" placeholder="https://connect.example.com" required />
+              </label>
+              <label>
+                <span class="label">Connect Token</span>
+                <input type="password" name="connectToken" required />
+              </label>
+              <label>
+                <span class="label">Vault Name</span>
+                <input type="text" name="vaultName" required />
+              </label>
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary">Configure Provider</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {{ end }}
+  </section>
+{{ end }}

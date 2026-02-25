@@ -1,0 +1,70 @@
+{{- if .Values.workspace.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "picoclaw.fullname" . }}-workspace
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        {{- include "picoclaw.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: workspace-import
+    spec:
+      restartPolicy: Never
+      containers:
+        {{- if eq .Values.workspace.provider "s3" }}
+        - name: workspace-import
+          image: amazon/aws-cli:latest
+          command:
+            - sh
+            - -c
+            - |
+              {{- if .Values.workspace.s3.prefix }}
+              aws s3 sync "s3://{{ .Values.workspace.s3.bucket }}/{{ .Values.workspace.s3.prefix }}" /workspace
+              {{- else }}
+              aws s3 sync "s3://{{ .Values.workspace.s3.bucket }}" /workspace
+              {{- end }}
+          env:
+            - name: AWS_DEFAULT_REGION
+              value: {{ .Values.workspace.s3.region | default "us-east-1" | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.workspace.s3.secretName }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+        {{- end }}
+        {{- if eq .Values.workspace.provider "github" }}
+        - name: workspace-import
+          image: alpine/git:latest
+          command:
+            - sh
+            - -c
+            - |
+              {{- if .Values.workspace.github.path }}
+              git clone --depth 1 --branch {{ .Values.workspace.github.branch | default "main" }} \
+                "https://${GITHUB_TOKEN}@github.com/{{ .Values.workspace.github.repository }}.git" /tmp/repo
+              cp -a "/tmp/repo/{{ .Values.workspace.github.path }}/." /workspace/
+              {{- else }}
+              git clone --depth 1 --branch {{ .Values.workspace.github.branch | default "main" }} \
+                "https://${GITHUB_TOKEN}@github.com/{{ .Values.workspace.github.repository }}.git" /workspace
+              {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.workspace.github.secretName }}
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+        {{- end }}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "picoclaw.fullname" . }}
+{{- end }}

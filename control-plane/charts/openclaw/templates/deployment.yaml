@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openclaw.fullname" . }}
+  labels:
+    {{- include "openclaw.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "openclaw.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "openclaw.labels" . | nindent 8 }}
+    spec:
+      {{- if and .Values.backup.enabled .Values.backup.restoreOnStartup }}
+      initContainers:
+        - name: restore-workspace
+          image: "{{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}"
+          imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+          args:
+            - restore
+            - --mode
+            - {{ .Values.backup.mode }}
+            - --workspace
+            - /workspace
+            - --bucket
+            - {{ .Values.backup.s3.bucket | quote }}
+            - --endpoint
+            - {{ .Values.backup.s3.endpoint | quote }}
+            - --region
+            - {{ .Values.backup.s3.region | quote }}
+            - --prefix
+            - {{ .Values.backup.s3.prefix | default (include "openclaw.fullname" .) | quote }}
+          {{- $accessName := .Values.backup.credentials.accessKeyIdSecretRef.name }}
+          {{- $accessKey := .Values.backup.credentials.accessKeyIdSecretRef.key | default "value" }}
+          {{- $secretName := .Values.backup.credentials.secretAccessKeySecretRef.name }}
+          {{- $secretKey := .Values.backup.credentials.secretAccessKeySecretRef.key | default "value" }}
+          {{- if or $accessName $secretName }}
+          env:
+            {{- if $accessName }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $accessName }}
+                  key: {{ $accessKey }}
+            {{- end }}
+            {{- if $secretName }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretKey }}
+            {{- end }}
+          {{- else if .Values.backup.credentialsSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backup.credentialsSecret }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /workspace
+      {{- end }}
+      containers:
+        - name: openclaw
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "/scripts/start-openclaw.sh"]
+          ports:
+            - name: http
+              containerPort: {{ .Values.gateway.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "openclaw.fullname" . }}
+          {{- if .Values.envSecrets }}
+          env:
+          {{- range .Values.envSecrets }}
+            - name: {{ .envVar }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretRef.name }}
+                  key: {{ .secretRef.key }}
+          {{- end }}
+          {{- end }}
+          livenessProbe:
+            {{- if eq (default "tcpSocket" .Values.healthCheck.type) "httpGet" }}
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            {{- else if eq .Values.healthCheck.type "tcpSocket" }}
+            tcpSocket:
+              port: http
+            {{- else }}
+            exec:
+              command:
+                - /bin/bash
+                - -lc
+                - openclaw gateway status >/dev/null 2>&1
+            {{- end }}
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds | default 30 }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold | default 10 }}
+          readinessProbe:
+            {{- if eq (default "tcpSocket" .Values.healthCheck.type) "httpGet" }}
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            {{- else if eq .Values.healthCheck.type "tcpSocket" }}
+            tcpSocket:
+              port: http
+            {{- else }}
+            exec:
+              command:
+                - /bin/bash
+                - -lc
+                - openclaw gateway status >/dev/null 2>&1
+            {{- end }}
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds | default 30 }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold | default 10 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: startup-script
+              mountPath: /scripts
+            - name: bot-secrets
+              mountPath: /etc/claw/secrets
+            - name: data
+              mountPath: {{ .Values.openclawConfigDir | quote }}
+      volumes:
+        - name: startup-script
+          configMap:
+            name: {{ include "openclaw.fullname" . }}-startup
+            defaultMode: 0755
+        - name: bot-secrets
+          secret:
+            secretName: {{ .Values.externalSecretName | default (printf "%s-secrets" (include "openclaw.fullname" .)) }}
+            defaultMode: 0444
+            optional: true
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "openclaw.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

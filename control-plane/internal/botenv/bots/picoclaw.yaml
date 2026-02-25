@@ -1,0 +1,381 @@
+name: picoclaw
+displayName: PicoClaw
+description: Lightweight multi-channel AI bot with tool support
+order: 10
+configFormat: json
+
+# The form field key that holds the selected default model.
+# Used with modelProviders to build the LiteLLM model_list array.
+agentModelField: agentModel
+
+# LiteLLM model_list providers. For each provider whose API key field has a value,
+# a model_list entry is generated. The selected model (agentModelField) is matched
+# against modelFilters; if no match, defaultModel is used as a fallback.
+modelProviders:
+  - name: anthropic
+    modelFilters: ["claude-"]
+    modelPrefix: "anthropic/"
+    apiBase: "https://api.anthropic.com/v1"
+    apiKeyField: anthropicApiKey
+
+  - name: openai
+    modelFilters: ["gpt-", "o3-"]
+    modelPrefix: "openai/"
+    apiBase: "https://api.openai.com/v1"
+    apiKeyField: openaiApiKey
+    defaultModel: "gpt-4o"
+
+  - name: gemini
+    modelFilters: ["gemini-"]
+    modelPrefix: "gemini/"
+    apiKeyField: geminiApiKey
+    defaultModel: "gemini-2.5-flash"
+
+  - name: openrouter
+    modelFilters: ["deepseek/", "qwen/", "meta-llama/", "llama-"]
+    modelPrefix: "openrouter/"
+    apiBase: "https://openrouter.ai/api/v1"
+    apiKeyField: openrouterApiKey
+    defaultModel: "deepseek/deepseek-chat-v3-0324"
+
+  - name: groq
+    modelFilters: ["llama-3", "mixtral-"]
+    modelPrefix: "groq/"
+    apiBase: "https://api.groq.com/openai/v1"
+    apiKeyField: groqApiKey
+    defaultModel: "llama-3.3-70b-versatile"
+
+  - name: deepseek
+    modelFilters: ["deepseek-"]
+    modelPrefix: "deepseek/"
+    apiBase: "https://api.deepseek.com/v1"
+    apiKeyField: deepseekApiKey
+    defaultModel: "deepseek-chat"
+
+sections:
+  - key: agent
+    label: Agent Settings
+    icon: cog
+    fields:
+      - key: agentModel
+        label: Default Model
+        type: model
+        default: ""
+        configPath: "agents.defaults.model"
+        valuesPath: "configFile.content"
+        fontMono: true
+        helpText: "Search models from OpenRouter — supports 200+ models from all providers."
+
+      - key: agentMaxTokens
+        label: Max Tokens
+        type: text
+        default: "8192"
+        placeholder: "8192"
+        configPath: "agents.defaults.max_tokens"
+        valuesPath: "configFile.content"
+
+      - key: agentTemperature
+        label: Temperature
+        type: text
+        default: "0.7"
+        placeholder: "0.7"
+        configPath: "agents.defaults.temperature"
+        valuesPath: "configFile.content"
+
+      - key: agentMaxIterations
+        label: Max Tool Iterations
+        type: text
+        default: "20"
+        placeholder: "20"
+        configPath: "agents.defaults.max_tool_iterations"
+        valuesPath: "configFile.content"
+
+      - key: restrictWorkspace
+        label: Restrict to Workspace
+        type: checkbox
+        default: "true"
+        configPath: "agents.defaults.restrict_to_workspace"
+        valuesPath: "configFile.content"
+        helpText: "Prevent the agent from accessing files outside its workspace"
+
+  - key: channels
+    label: Channels
+    icon: chat-bubble-left-right
+    description: "Enable messaging channels and provide their tokens"
+    collapsible: true
+    fields:
+      - key: telegramEnabled
+        label: Telegram
+        type: checkbox
+        configPath: "channels.telegram.enabled"
+        valuesPath: "configFile.content"
+
+      - key: telegramToken
+        label: Telegram Bot Token
+        type: password
+        secret: true
+        placeholder: "Token from @BotFather"
+        showWhen: "telegramEnabled=true"
+        configPath: "channels.telegram.token"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: telegramAllowFrom
+        label: Allowed User IDs
+        type: text
+        placeholder: "123456789 (comma-separated)"
+        showWhen: "telegramEnabled=true"
+        configPath: "channels.telegram.allow_from"
+        valuesPath: "configFile.content"
+        fontMono: true
+        helpText: "Comma-separated Telegram user IDs allowed to chat"
+
+      - key: discordEnabled
+        label: Discord
+        type: checkbox
+        configPath: "channels.discord.enabled"
+        valuesPath: "configFile.content"
+
+      - key: discordToken
+        label: Discord Bot Token
+        type: password
+        secret: true
+        placeholder: "Bot token from Discord Developer Portal"
+        showWhen: "discordEnabled=true"
+        configPath: "channels.discord.token"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: discordMentionOnly
+        label: Mention Only
+        type: checkbox
+        showWhen: "discordEnabled=true"
+        configPath: "channels.discord.mention_only"
+        valuesPath: "configFile.content"
+        helpText: "Only respond when @mentioned"
+
+      - key: slackEnabled
+        label: Slack
+        type: checkbox
+        configPath: "channels.slack.enabled"
+        valuesPath: "configFile.content"
+
+      - key: slackBotToken
+        label: Slack Bot Token
+        type: password
+        secret: true
+        placeholder: "xoxb-..."
+        showWhen: "slackEnabled=true"
+        configPath: "channels.slack.bot_token"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: slackAppToken
+        label: Slack App Token
+        type: password
+        secret: true
+        placeholder: "xapp-..."
+        showWhen: "slackEnabled=true"
+        configPath: "channels.slack.app_token"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: whatsappEnabled
+        label: WhatsApp
+        type: checkbox
+        configPath: "channels.whatsapp.enabled"
+        valuesPath: "configFile.content"
+
+      - key: whatsappBridgeUrl
+        label: WhatsApp Bridge URL
+        type: text
+        placeholder: "ws://localhost:3001"
+        default: "ws://localhost:3001"
+        showWhen: "whatsappEnabled=true"
+        configPath: "channels.whatsapp.bridge_url"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: lineEnabled
+        label: LINE
+        type: checkbox
+        configPath: "channels.line.enabled"
+        valuesPath: "configFile.content"
+
+      - key: lineChannelSecret
+        label: LINE Channel Secret
+        type: password
+        secret: true
+        showWhen: "lineEnabled=true"
+        configPath: "channels.line.channel_secret"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: lineAccessToken
+        label: LINE Channel Access Token
+        type: password
+        secret: true
+        showWhen: "lineEnabled=true"
+        configPath: "channels.line.channel_access_token"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: dingtalkEnabled
+        label: DingTalk
+        type: checkbox
+        configPath: "channels.dingtalk.enabled"
+        valuesPath: "configFile.content"
+
+      - key: dingtalkClientId
+        label: DingTalk Client ID
+        type: text
+        showWhen: "dingtalkEnabled=true"
+        configPath: "channels.dingtalk.client_id"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: dingtalkClientSecret
+        label: DingTalk Client Secret
+        type: password
+        secret: true
+        showWhen: "dingtalkEnabled=true"
+        configPath: "channels.dingtalk.client_secret"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: feishuEnabled
+        label: Feishu / Lark
+        type: checkbox
+        configPath: "channels.feishu.enabled"
+        valuesPath: "configFile.content"
+
+      - key: feishuAppId
+        label: Feishu App ID
+        type: text
+        showWhen: "feishuEnabled=true"
+        configPath: "channels.feishu.app_id"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: feishuAppSecret
+        label: Feishu App Secret
+        type: password
+        secret: true
+        showWhen: "feishuEnabled=true"
+        configPath: "channels.feishu.app_secret"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+  - key: providers
+    label: LLM Providers
+    icon: cpu-chip
+    description: "Configure API keys for LLM providers"
+    collapsible: true
+    fields:
+      - key: anthropicApiKey
+        label: Anthropic API Key
+        type: password
+        secret: true
+        placeholder: "sk-ant-..."
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: openaiApiKey
+        label: OpenAI API Key
+        type: password
+        secret: true
+        placeholder: "sk-..."
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: geminiApiKey
+        label: Gemini API Key
+        type: password
+        secret: true
+        placeholder: "AI..."
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: openrouterApiKey
+        label: OpenRouter API Key
+        type: password
+        secret: true
+        placeholder: "sk-or-v1-..."
+        valuesPath: "configFile.content"
+        fontMono: true
+        helpText: "Access 200+ models through a single key"
+
+      - key: groqApiKey
+        label: Groq API Key
+        type: password
+        secret: true
+        placeholder: "gsk_..."
+        valuesPath: "configFile.content"
+        fontMono: true
+        helpText: "Fast inference + free Whisper voice transcription"
+
+      - key: deepseekApiKey
+        label: DeepSeek API Key
+        type: password
+        secret: true
+        placeholder: "sk-..."
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: ollamaApiBase
+        label: Ollama Base URL
+        type: text
+        placeholder: "http://localhost:11434/v1"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+  - key: tools
+    label: Tools
+    icon: wrench-screwdriver
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: braveEnabled
+        label: Brave Search
+        type: checkbox
+        configPath: "tools.web.brave.enabled"
+        valuesPath: "configFile.content"
+
+      - key: braveApiKey
+        label: Brave API Key
+        type: password
+        secret: true
+        placeholder: "BSA..."
+        showWhen: "braveEnabled=true"
+        configPath: "tools.web.brave.api_key"
+        valuesPath: "configFile.content"
+        fontMono: true
+
+      - key: duckduckgoEnabled
+        label: DuckDuckGo Search
+        type: checkbox
+        default: "true"
+        configPath: "tools.web.duckduckgo.enabled"
+        valuesPath: "configFile.content"
+        helpText: "Free web search, no API key needed"
+
+  - key: heartbeat
+    label: Heartbeat
+    icon: heart
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: heartbeatEnabled
+        label: Enable Heartbeat
+        type: checkbox
+        default: "true"
+        configPath: "heartbeat.enabled"
+        valuesPath: "configFile.content"
+
+      - key: heartbeatInterval
+        label: Interval (minutes)
+        type: text
+        default: "30"
+        placeholder: "30"
+        configPath: "heartbeat.interval"
+        valuesPath: "configFile.content"

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: busybox
+description: Debian toolbox with Claw CLIs for debugging, testing, and ad-hoc commands
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

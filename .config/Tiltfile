@@ -1,0 +1,256 @@
+# === ClawMachine Development ===
+# Requirements: kind cluster (with kind-config.yaml for Cilium), docker, helm, kubectl, mise
+# Cluster setup: kind create cluster --name clawmachine --config kind-config.yaml
+#
+# Usage:
+#   tilt up                              # interactive dev (ESO + Cilium)
+#   tilt ci                              # CI mode (build + deploy + verify)
+#   tilt up -- --no-cilium               # skip Cilium
+#   tilt up -- --1password-connect        # include 1Password Connect (needs credentials)
+#   tilt up -- --no-external-secrets      # skip ESO
+
+load('ext://namespace', 'namespace_create')
+load('ext://helm_remote', 'helm_remote')
+
+# Parse args — all three infra deps enabled by default
+config.define_bool('cilium')
+config.define_bool('external-secrets')
+config.define_bool('1password-connect')
+cfg = config.parse()
+enable_cilium = cfg.get('cilium', True)
+enable_eso = cfg.get('external-secrets', True)
+enable_op_connect = cfg.get('1password-connect', False)
+
+# --- Namespaces ---
+namespace_create('claw-machine')
+
+# --- Build Steps ---
+
+# Chart packaging — embeds bot charts into the Go binary
+local_resource(
+    'chart-package',
+    cmd='cd .. && mise run charts',
+    deps=[
+        '../control-plane/charts/picoclaw',
+        '../control-plane/charts/ironclaw',
+        '../control-plane/charts/clawmachine',
+        '../control-plane/charts/openclaw',
+        '../control-plane/charts/busybox',
+        '../control-plane/charts/vendor',
+    ],
+    labels=['build'],
+)
+
+# --- Bot Images (deployed at runtime by the control plane, not by Tilt) ---
+# Use local_resource so they build, load into kind, and show up in the UI.
+
+local_resource(
+    'picoclaw-image',
+    cmd='docker build -t ghcr.io/zackerydev/picoclaw:0.1.2 ../docker/picoclaw && kind load docker-image ghcr.io/zackerydev/picoclaw:0.1.2 --name clawmachine',
+    deps=['../docker/picoclaw'],
+    labels=['build'],
+)
+
+local_resource(
+    'ironclaw-image',
+    cmd='docker build -t ghcr.io/zackerydev/ironclaw:0.11.1 ../docker/ironclaw && kind load docker-image ghcr.io/zackerydev/ironclaw:0.11.1 --name clawmachine',
+    deps=['../docker/ironclaw'],
+    labels=['build'],
+)
+
+local_resource(
+    'toolbox-image',
+    cmd='docker build -t ghcr.io/zackerydev/clawmachine-toolbox:0.1.0 ../docker/toolbox && kind load docker-image ghcr.io/zackerydev/clawmachine-toolbox:0.1.0 --name clawmachine',
+    deps=['../docker/toolbox'],
+    labels=['build'],
+)
+
+local_resource(
+    'openclaw-image',
+    cmd='docker build -t ghcr.io/zackerydev/openclaw:2026.2.21 ../docker/openclaw && kind load docker-image ghcr.io/zackerydev/openclaw:2026.2.21 --name clawmachine',
+    deps=['../docker/openclaw'],
+    labels=['build'],
+)
+
+# --- Control Plane ---
+
+docker_build(
+    'clawmachine',
+    '../control-plane',
+    ignore=[
+        'node_modules',
+        '.gocache',
+        'styles',
+        'e2e',
+        '.air.toml',
+        '.prettierrc.yaml',
+        '.env.example',
+        'compose.yml',
+        'package.yaml',
+        'pnpm-lock.yaml',
+    ],
+    live_update=[
+        sync('../control-plane/templates', '/app/templates'),
+        sync('../control-plane/static', '/app/static'),
+    ],
+)
+
+# Backup/restore jobs in bot charts default to ghcr.io/zackerydev/clawmachine:0.1.0.
+# Mirror the local control-plane image to that ref inside kind to avoid ImagePullBackOff in dev.
+local_resource(
+    'clawmachine-backup-image',
+    cmd=' && '.join([
+        'docker image inspect clawmachine:latest >/dev/null 2>&1 || docker build -t clawmachine:latest ../control-plane',
+        'docker tag clawmachine:latest ghcr.io/zackerydev/clawmachine:0.1.0',
+        'kind load docker-image ghcr.io/zackerydev/clawmachine:0.1.0 --name clawmachine',
+    ]),
+    deps=['../control-plane'],
+    labels=['build'],
+)
+
+# --- Infrastructure ---
+
+# External Secrets Operator (default: on)
+# Must wait for Cilium CNI — without networking, pods can't reach the API server
+if enable_eso:
+    helm_remote(
+        'external-secrets',
+        repo_url='https://charts.external-secrets.io',
+        release_name='external-secrets',
+        namespace='external-secrets',
+        create_namespace=True,
+    )
+    if enable_cilium:
+        k8s_resource('external-secrets', resource_deps=['cilium'], labels=['infra'])
+        k8s_resource('external-secrets-webhook', resource_deps=['cilium'], labels=['infra'])
+        k8s_resource('external-secrets-cert-controller', resource_deps=['cilium'], labels=['infra'])
+
+# Cilium CNI (default: on — Kind's kindnet doesn't enforce NetworkPolicies)
+# Cilium provides DNS-aware network policies via CiliumNetworkPolicy + toFQDNs,
+# plus Hubble for flow observability. Replaces Calico as of HL-241.
+if enable_cilium:
+    local_resource(
+        'cilium',
+        cmd=' && '.join([
+            'helm repo add cilium https://helm.cilium.io/ 2>/dev/null || true',
+            'helm repo update cilium',
+            'helm upgrade --install cilium cilium/cilium'
+                + ' --namespace kube-system'
+                + ' --set operator.replicas=1'
+                + ' --set hubble.relay.enabled=true'
+                + ' --set hubble.ui.enabled=true'
+                + ' --set kubeProxyReplacement=false'
+                + ' --set socketLB.hostNamespaceOnly=true'
+                + ' --wait --timeout 120s',
+            'echo "Waiting for Cilium daemonset..."',
+            'kubectl -n kube-system rollout status daemonset/cilium --timeout=120s',
+        ]),
+        labels=['infra'],
+    )
+    local_resource(
+        'hubble-ui-port-forward',
+        cmd='kubectl -n kube-system get svc hubble-ui >/dev/null',
+        serve_cmd='kubectl -n kube-system port-forward svc/hubble-ui 12000:80',
+        resource_deps=['cilium'],
+        labels=['infra'],
+    )
+
+# 1Password Connect Server (default: off)
+# Pod won't be ready without op-credentials secret — that's expected in dev.
+# Ignore readiness so tilt ci doesn't block on it.
+if enable_op_connect:
+    helm_remote(
+        'connect',
+        repo_url='https://1password.github.io/connect-helm-charts',
+        release_name='connect',
+        namespace='1password',
+        create_namespace=True,
+    )
+    k8s_resource(
+        'onepassword-connect',
+        pod_readiness='ignore',
+        labels=['infra'],
+    )
+
+# --- LocalStack (S3-compatible endpoint for backup/restore testing) ---
+
+k8s_yaml(blob("""
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+  namespace: claw-machine
+  labels:
+    app: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+        - name: localstack
+          image: localstack/localstack:latest
+          ports:
+            - containerPort: 4566
+          env:
+            - name: SERVICES
+              value: s3
+            - name: DEFAULT_REGION
+              value: us-east-1
+          readinessProbe:
+            httpGet:
+              path: /_localstack/health
+              port: 4566
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+  namespace: claw-machine
+  labels:
+    app: localstack
+spec:
+  selector:
+    app: localstack
+  ports:
+    - port: 4566
+      targetPort: 4566
+"""))
+
+k8s_resource(
+    'localstack',
+    port_forwards=['4566:4566'],
+    labels=['infra'],
+)
+
+# --- Deploy ClawMachine ---
+
+k8s_yaml(helm(
+    '../control-plane/charts/clawmachine',
+    name='clawmachine',
+    namespace='claw-machine',
+    set=[
+        'image.repository=clawmachine',
+        'image.tag=latest',
+        'image.pullPolicy=Never',
+        'replicaCount=1',
+        'devMode=true',
+        # Allow Tilt live_update file sync to write to /app/templates and /app/static.
+        # readOnlyRootFilesystem blocks kubectl exec writes used by live_update.
+        'securityContext.readOnlyRootFilesystem=false',
+    ],
+))
+
+k8s_resource(
+    'clawmachine',
+    port_forwards=['8080:8080'],
+    resource_deps=['chart-package'],
+    labels=['app'],
+)

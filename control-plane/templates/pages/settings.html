@@ -1,0 +1,47 @@
+{{ define "settings" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Settings
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Configuration</span>
+        <h1>Settings</h1>
+        <p class="muted">Cluster-level configuration for secrets and providers.</p>
+      </div>
+    </div>
+
+    <div class="cards-grid">
+      <a href="/settings/providers" class="link-card">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--cm-aqua);opacity:0.8;margin-bottom:0.5rem">Secret Providers</p>
+        <p style="font-size:0.9rem;font-weight:600;color:var(--cm-text);margin-bottom:0.4rem">1Password Connect</p>
+        <p class="muted">Install and configure 1Password Connect.</p>
+        <p class="detail">
+          {{ if .ProviderConfigured }}
+            {{ .ProviderCount }} configured
+          {{ else }}
+            not configured
+          {{ end }}
+        </p>
+      </a>
+
+      <a href="/secrets" class="link-card">
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--cm-aqua);opacity:0.8;margin-bottom:0.5rem">External Secrets</p>
+        <p style="font-size:0.9rem;font-weight:600;color:var(--cm-text);margin-bottom:0.4rem">ESO Secrets</p>
+        <p class="muted">Add and remove synced ESO secrets.</p>
+        <p class="detail">
+          {{ if gt .SecretCount 0 }}
+            {{ .SecretCount }} secret{{ if gt .SecretCount 1 }}s{{ end }}
+          {{ else }}
+            no secrets
+          {{ end }}
+        </p>
+      </a>
+    </div>
+  </section>
+{{ end }}

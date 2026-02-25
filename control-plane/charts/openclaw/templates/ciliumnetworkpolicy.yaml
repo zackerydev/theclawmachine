@@ -1,0 +1,47 @@
+{{- if .Values.networkPolicy.useCilium }}
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "openclaw.fullname" . }}
+  labels:
+    {{- include "openclaw.labels" . | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "openclaw.selectorLabels" . | nindent 6 }}
+  egress:
+    # Allow DNS resolution (required for toFQDNs to work)
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: "*"
+    {{- if .Values.networkPolicy.allowedDomains }}
+    # Allow egress only to specified FQDNs
+    - toFQDNs:
+        {{- range .Values.networkPolicy.allowedDomains }}
+        - matchPattern: {{ . | quote }}
+        {{- end }}
+      {{- if .Values.networkPolicy.allowedPorts }}
+      toPorts:
+        - ports:
+            {{- range .Values.networkPolicy.allowedPorts }}
+            - port: {{ .port | quote }}
+              protocol: {{ .protocol | default "TCP" }}
+            {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+    - toPorts:
+        - ports:
+            - port: {{ .Values.service.port | default 18789 | quote }}
+              protocol: TCP
+  {{- end }}
+{{- end }}

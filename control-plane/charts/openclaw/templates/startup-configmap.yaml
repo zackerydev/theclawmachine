@@ -1,0 +1,220 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "openclaw.fullname" . }}-startup
+  labels:
+    {{- include "openclaw.labels" . | nindent 4 }}
+data:
+  start-openclaw.sh: |
+    #!/bin/bash
+    # ClawMachine OpenClaw startup script
+    # Reconciles auth/model/channels from Helm/env and starts the gateway
+    # Workspace import is handled by Helm pre-install hooks (HL-173)
+    set -euo pipefail
+
+    # Use OPENCLAW_HOME when provided, otherwise default to root home.
+    CONFIG_DIR="${OPENCLAW_HOME:-${HOME:-/root}/.openclaw}"
+    CONFIG_FILE="$CONFIG_DIR/openclaw.json"
+    WORKSPACE_DIR="$CONFIG_DIR/workspace"
+
+    echo "=== ClawMachine OpenClaw Bot Starting ==="
+    echo "Config: $CONFIG_DIR"
+    echo "Version: $(openclaw --version 2>/dev/null || echo 'unknown')"
+
+    # Cap Node.js heap so it doesn't blow past the container memory limit.
+    # Node's default (~1.5 GB) exceeds typical container limits and triggers OOM.
+    # Set to 768 MB by default (safe for a 1 Gi limit); override via NODE_OPTIONS env.
+    export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}"
+    echo "NODE_OPTIONS: $NODE_OPTIONS"
+
+    mkdir -p "$CONFIG_DIR" "$WORKSPACE_DIR"
+
+    {{- if and .Values.configFile.enabled .Values.configFile.content }}
+    echo "Applying managed configFile.content to $CONFIG_FILE"
+    cat >"$CONFIG_FILE" <<'CLAWMACHINE_OPENCLAW_CONFIG'
+{{ .Values.configFile.content | nindent 4 }}
+CLAWMACHINE_OPENCLAW_CONFIG
+    {{- end }}
+
+    warn() {
+      echo "WARNING: $*"
+    }
+
+    set_cfg_json() {
+      local path="$1"
+      local value="$2"
+      if ! openclaw config set "$path" "$value" --json >/dev/null 2>&1; then
+        warn "failed to set JSON config path '$path'"
+      fi
+    }
+
+    set_cfg_text() {
+      local path="$1"
+      local value="$2"
+      if ! openclaw config set "$path" "$value" >/dev/null 2>&1; then
+        warn "failed to set config path '$path'"
+      fi
+    }
+
+    unset_cfg() {
+      local path="$1"
+      if ! openclaw config unset "$path" >/dev/null 2>&1; then
+        warn "failed to unset config path '$path'"
+      fi
+    }
+
+    # Load mounted secret values into environment variables.
+    SECRETS_DIR="/etc/claw/secrets"
+    if [ -d "$SECRETS_DIR" ]; then
+      echo "Loading secrets from $SECRETS_DIR..."
+      for secret_file in "$SECRETS_DIR"/*; do
+        [ -f "$secret_file" ] || continue
+        key="$(basename "$secret_file")"
+        export "$key"="$(cat "$secret_file")"
+      done
+      echo "Secrets loaded"
+    fi
+
+    # openclaw onboard handles initial config creation in non-interactive mode.
+    # Avoid calling legacy `openclaw setup` here because it now requires extra
+    # risk-acceptance flags and would produce noisy startup warnings.
+
+    # Reconcile provider auth + gateway core settings through OpenClaw's CLI so
+    # provider-specific auth storage stays compatible across OpenClaw releases.
+    AUTH_CHOICE_RAW="${AUTH_CHOICE:-apiKey}"
+    AUTH_CHOICE_CLI="$AUTH_CHOICE_RAW"
+    case "$AUTH_CHOICE_RAW" in
+      openai)
+        AUTH_CHOICE_CLI="openai-api-key"
+        ;;
+      openrouter)
+        AUTH_CHOICE_CLI="openrouter-api-key"
+        ;;
+      custom-api-key)
+        warn "auth choice custom-api-key is no longer supported; using skip"
+        AUTH_CHOICE_CLI="skip"
+        ;;
+    esac
+
+    ONBOARD_CMD=(
+      openclaw onboard
+      --non-interactive
+      --accept-risk
+      --mode local
+      --auth-choice "$AUTH_CHOICE_CLI"
+      --gateway-port "${GATEWAY_PORT:-18789}"
+      --gateway-bind "${GATEWAY_BIND:-lan}"
+      --skip-health
+      --no-install-daemon
+    )
+    if [ -n "${OPENCLAW_GATEWAY_TOKEN:-}" ]; then
+      ONBOARD_CMD+=(--gateway-auth token --gateway-token "$OPENCLAW_GATEWAY_TOKEN")
+    fi
+    case "$AUTH_CHOICE_CLI" in
+      apiKey)
+        [ -n "${ANTHROPIC_API_KEY:-}" ] && ONBOARD_CMD+=(--anthropic-api-key "$ANTHROPIC_API_KEY")
+        ;;
+      gemini-api-key)
+        [ -n "${GEMINI_API_KEY:-}" ] && ONBOARD_CMD+=(--gemini-api-key "$GEMINI_API_KEY")
+        ;;
+      openai-api-key)
+        [ -n "${OPENAI_API_KEY:-}" ] && ONBOARD_CMD+=(--openai-api-key "$OPENAI_API_KEY")
+        ;;
+      openrouter-api-key)
+        [ -n "${OPENROUTER_API_KEY:-}" ] && ONBOARD_CMD+=(--openrouter-api-key "$OPENROUTER_API_KEY")
+        ;;
+      cloudflare-ai-gateway-api-key)
+        [ -n "${CF_AI_GATEWAY_ACCOUNT_ID:-}" ] && ONBOARD_CMD+=(--cloudflare-ai-gateway-account-id "$CF_AI_GATEWAY_ACCOUNT_ID")
+        [ -n "${CF_AI_GATEWAY_GATEWAY_ID:-}" ] && ONBOARD_CMD+=(--cloudflare-ai-gateway-gateway-id "$CF_AI_GATEWAY_GATEWAY_ID")
+        [ -n "${CLOUDFLARE_AI_GATEWAY_API_KEY:-}" ] && ONBOARD_CMD+=(--cloudflare-ai-gateway-api-key "$CLOUDFLARE_AI_GATEWAY_API_KEY")
+        ;;
+      skip)
+        ;;
+      *)
+        warn "unknown auth choice '$AUTH_CHOICE_CLI'; onboarding may ignore provider config"
+        ;;
+    esac
+    echo "Reconciling auth and gateway via openclaw onboard..."
+    if ! "${ONBOARD_CMD[@]}"; then
+      warn "openclaw onboard reconcile failed; continuing with direct config commands"
+    fi
+
+    # Reconcile explicit gateway and channel toggles/token fields.
+    set_cfg_json "gateway.port" "${GATEWAY_PORT:-18789}"
+    set_cfg_text "gateway.bind" "${GATEWAY_BIND:-lan}"
+    if [ -n "${OPENCLAW_GATEWAY_TOKEN:-}" ]; then
+      set_cfg_text "gateway.auth.mode" "token"
+      set_cfg_text "gateway.auth.token" "$OPENCLAW_GATEWAY_TOKEN"
+    fi
+
+    if [ "${CHANNEL_DISCORD:-false}" = "true" ]; then
+      set_cfg_json "channels.discord.enabled" "true"
+      set_cfg_json "plugins.entries.discord.enabled" "true"
+      if [ -n "${DISCORD_BOT_TOKEN:-}" ]; then
+        set_cfg_text "channels.discord.token" "$DISCORD_BOT_TOKEN"
+      else
+        warn "CHANNEL_DISCORD=true but DISCORD_BOT_TOKEN is empty"
+      fi
+    else
+      set_cfg_json "channels.discord.enabled" "false"
+      set_cfg_json "plugins.entries.discord.enabled" "false"
+      unset_cfg "channels.discord.token"
+    fi
+
+    if [ "${CHANNEL_TELEGRAM:-false}" = "true" ]; then
+      set_cfg_json "channels.telegram.enabled" "true"
+      set_cfg_json "plugins.entries.telegram.enabled" "true"
+      if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+        set_cfg_text "channels.telegram.botToken" "$TELEGRAM_BOT_TOKEN"
+      else
+        warn "CHANNEL_TELEGRAM=true but TELEGRAM_BOT_TOKEN is empty"
+      fi
+    else
+      set_cfg_json "channels.telegram.enabled" "false"
+      set_cfg_json "plugins.entries.telegram.enabled" "false"
+      unset_cfg "channels.telegram.botToken"
+    fi
+
+    if [ "${CHANNEL_SLACK:-false}" = "true" ]; then
+      set_cfg_json "channels.slack.enabled" "true"
+      set_cfg_json "plugins.entries.slack.enabled" "true"
+      if [ -n "${SLACK_BOT_TOKEN:-}" ]; then
+        set_cfg_text "channels.slack.botToken" "$SLACK_BOT_TOKEN"
+      else
+        warn "CHANNEL_SLACK=true but SLACK_BOT_TOKEN is empty"
+      fi
+      if [ -n "${SLACK_APP_TOKEN:-}" ]; then
+        set_cfg_text "channels.slack.appToken" "$SLACK_APP_TOKEN"
+      else
+        unset_cfg "channels.slack.appToken"
+      fi
+    else
+      set_cfg_json "channels.slack.enabled" "false"
+      set_cfg_json "plugins.entries.slack.enabled" "false"
+      unset_cfg "channels.slack.botToken"
+      unset_cfg "channels.slack.appToken"
+    fi
+
+    if [ -n "${AGENT_DEFAULT_MODEL:-}" ]; then
+      CANONICAL_MODEL="$AGENT_DEFAULT_MODEL"
+      case "$AGENT_DEFAULT_MODEL" in
+        "claude-sonnet-4.6"|"anthropic/claude-sonnet-4.6"|"anthropic/sonnet-4.6"|"sonnet-4.6")
+          CANONICAL_MODEL="anthropic/claude-sonnet-4-6"
+          ;;
+        "claude-opus-4.6"|"anthropic/claude-opus-4.6"|"anthropic/opus-4.6"|"opus-4.6")
+          CANONICAL_MODEL="anthropic/claude-opus-4-6"
+          ;;
+      esac
+      if [ "$CANONICAL_MODEL" != "$AGENT_DEFAULT_MODEL" ]; then
+        warn "canonicalized default model '$AGENT_DEFAULT_MODEL' to '$CANONICAL_MODEL'"
+      fi
+      if ! openclaw models set "$CANONICAL_MODEL" >/dev/null 2>&1; then
+        warn "failed to set default model '$CANONICAL_MODEL'"
+      fi
+    fi
+
+    echo "Starting OpenClaw gateway on port ${GATEWAY_PORT:-18789}..."
+    exec openclaw gateway \
+      --port "${GATEWAY_PORT:-18789}" \
+      --bind "${GATEWAY_BIND:-lan}" \
+      --allow-unconfigured

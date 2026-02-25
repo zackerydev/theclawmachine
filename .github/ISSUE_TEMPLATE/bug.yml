@@ -1,0 +1,48 @@
+name: Bug Report
+description: Something broke. Tell us what.
+labels: ["Bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Brief description. Screenshots welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimum steps to trigger the bug.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: cluster
+    attributes:
+      label: Cluster info
+      description: "Kind/EKS/GKE/etc + K8s version"
+      placeholder: "kind v0.20, K8s 1.29"
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Dashboard / UI
+        - Bot Install / Uninstall
+        - Secrets / ESO
+        - CLI
+        - Helm Charts
+        - Network Policies
+        - Other
+    validations:
+      required: true

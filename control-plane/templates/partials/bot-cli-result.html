@@ -1,0 +1,26 @@
+{{ define "bot-cli-result" }}
+  {{ if .Success }}
+    <div class="alert alert-success">Command completed.</div>
+  {{ else }}
+    <div class="alert alert-error">Command failed{{ if .Error }}: {{ .Error }}{{ end }}</div>
+  {{ end }}
+
+  <div class="form-fieldset">
+    <legend>Command</legend>
+    <code>{{ .Command }}</code>
+  </div>
+
+  {{ if .Stdout }}
+    <div class="form-fieldset">
+      <legend>stdout</legend>
+      <pre class="log-output whitespace-pre-wrap break-all">{{ .Stdout }}</pre>
+    </div>
+  {{ end }}
+
+  {{ if .Stderr }}
+    <div class="form-fieldset">
+      <legend>stderr</legend>
+      <pre class="log-output whitespace-pre-wrap break-all text-error">{{ .Stderr }}</pre>
+    </div>
+  {{ end }}
+{{ end }}

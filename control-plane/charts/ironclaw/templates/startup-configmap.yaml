@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ironclaw.fullname" . }}-startup
+  labels:
+    {{- include "ironclaw.labels" . | nindent 4 }}
+data:
+  start-ironclaw.sh: |
+    #!/bin/sh
+    set -e
+
+    # Load secrets from volume files into environment
+    SECRETS_DIR="/etc/claw/secrets"
+    if [ -d "$SECRETS_DIR" ]; then
+      for secret_file in "$SECRETS_DIR"/*; do
+        [ -f "$secret_file" ] || continue
+        key="$(basename "$secret_file")"
+        export "$key"="$(cat "$secret_file")"
+      done
+    fi
+
+    {{- if .Values.postgresql.enabled }}
+    # Wait for PostgreSQL to accept TCP connections.
+    # Keep this bounded so probes do not kill the pod before app start.
+    PG_HOST="{{ include "ironclaw.fullname" . }}-postgres"
+    echo "Waiting for PostgreSQL at $PG_HOST:5432..."
+    {{- $pg := (.Values.postgresql | default dict) }}
+    {{- $wait := ($pg.wait | default dict) }}
+    max_retries={{ ($wait.maxRetries | default 20) }}
+    retry_sleep={{ ($wait.retrySleepSeconds | default 1) }}
+
+    if command -v nc >/dev/null 2>&1; then
+      retries=0
+      until nc -z -w 1 "$PG_HOST" 5432 >/dev/null 2>&1 || [ "$retries" -ge "$max_retries" ]; do
+        retries=$((retries + 1))
+        sleep "$retry_sleep"
+      done
+      if [ "$retries" -ge "$max_retries" ]; then
+        echo "Timed out waiting for PostgreSQL after $max_retries attempts; continuing startup"
+      else
+        echo "PostgreSQL TCP check passed"
+      fi
+    else
+      echo "nc is not available in image; skipping explicit PostgreSQL wait"
+    fi
+    {{- end }}
+
+    # Exec the ironclaw binary.
+    # In containers there is no OS keychain/DBus, so force non-onboarding mode when supported.
+    if /usr/local/bin/ironclaw --help 2>&1 | grep -q -- "--no-onboard"; then
+      exec /usr/local/bin/ironclaw --no-onboard "$@"
+    fi
+    exec /usr/local/bin/ironclaw "$@"

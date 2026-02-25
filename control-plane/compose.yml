@@ -1,0 +1,21 @@
+services:
+  control-plane:
+    build: .
+    environment:
+      PORT: "8080"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./cmd
+          target: /app/cmd
+        - action: rebuild
+          path: ./internal
+          target: /app/internal
+        - action: sync
+          path: ./templates
+          target: /app/templates
+        - action: sync
+          path: ./static
+          target: /app/static
+    ports:
+      - "8080:8080"

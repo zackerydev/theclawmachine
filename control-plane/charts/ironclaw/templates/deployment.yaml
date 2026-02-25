@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ironclaw.fullname" . }}
+  labels:
+    {{- include "ironclaw.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "ironclaw.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ironclaw.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      {{- if or .Values.migrations.enabled (and .Values.backup.enabled .Values.backup.restoreOnStartup) }}
+      initContainers:
+        {{- if .Values.migrations.enabled }}
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: {{ toJson .Values.migrations.command }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - configMapRef:
+                name: {{ include "ironclaw.fullname" . }}
+            - secretRef:
+                name: {{ include "ironclaw.fullname" . }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+        {{- end }}
+        {{- if and .Values.backup.enabled .Values.backup.restoreOnStartup }}
+        - name: restore-database
+          image: "{{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}"
+          imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+          args:
+            - restore
+            - --mode
+            - {{ .Values.backup.mode }}
+            - --bucket
+            - {{ .Values.backup.s3.bucket | quote }}
+            - --endpoint
+            - {{ .Values.backup.s3.endpoint | quote }}
+            - --region
+            - {{ .Values.backup.s3.region | quote }}
+            - --prefix
+            - {{ .Values.backup.s3.prefix | default (include "ironclaw.fullname" .) | quote }}
+          {{- $accessName := .Values.backup.credentials.accessKeyIdSecretRef.name }}
+          {{- $accessKey := .Values.backup.credentials.accessKeyIdSecretRef.key | default "value" }}
+          {{- $secretName := .Values.backup.credentials.secretAccessKeySecretRef.name }}
+          {{- $secretKey := .Values.backup.credentials.secretAccessKeySecretRef.key | default "value" }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ironclaw.fullname" . }}-secrets
+                  key: DATABASE_URL
+            {{- if $accessName }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $accessName }}
+                  key: {{ $accessKey }}
+            {{- end }}
+            {{- if $secretName }}
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secretName }}
+                  key: {{ $secretKey }}
+            {{- end }}
+          {{- if and (not $accessName) (not $secretName) .Values.backup.credentialsSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backup.credentialsSecret }}
+          {{- else if and (not $accessName) (not $secretName) .Values.backup.secretName }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.backup.secretName }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      containers:
+        - name: ironclaw
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/start-ironclaw.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: gateway
+              containerPort: {{ .Values.gateway.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "ironclaw.fullname" . }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: gateway
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: gateway
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          {{- $health := (.Values.healthCheck | default dict) }}
+          {{- $startupProbe := ($health.startupProbe | default dict) }}
+          {{- if ($startupProbe.enabled | default true) }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: gateway
+            failureThreshold: {{ ($startupProbe.failureThreshold | default 30) }}
+            periodSeconds: {{ ($startupProbe.periodSeconds | default 5) }}
+            timeoutSeconds: {{ ($startupProbe.timeoutSeconds | default 1) }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.envSecrets }}
+          env:
+          {{- range .Values.envSecrets }}
+            - name: {{ .envVar }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretRef.name }}
+                  key: {{ .secretRef.key }}
+          {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: startup-script
+              mountPath: /scripts
+            - name: secrets
+              mountPath: {{ .Values.secrets.mountPath | default "/etc/claw/secrets" }}
+            - name: workspace
+              mountPath: /home/ironclaw/.ironclaw/workspace
+            - name: tmp
+              mountPath: /tmp
+            {{- range .Values.secrets.mounts }}
+            - name: secret-{{ .name }}
+              mountPath: {{ $.Values.secrets.mountPath | default "/etc/claw/secrets" }}/{{ .name }}
+            {{- end }}
+            {{- if .Values.configFile.enabled }}
+            - name: config-file
+              mountPath: {{ .Values.configFile.mountPath }}/{{ .Values.configFile.fileName }}
+              subPath: {{ .Values.configFile.fileName }}
+            {{- end }}
+      volumes:
+        - name: startup-script
+          configMap:
+            name: {{ include "ironclaw.fullname" . }}-startup
+            defaultMode: 0755
+        - name: secrets
+          secret:
+            secretName: {{ include "ironclaw.fullname" . }}
+            {{- if .Values.secrets.external }}
+            optional: true
+            {{- end }}
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+        {{- range .Values.secrets.mounts }}
+        - name: secret-{{ .name }}
+          secret:
+            secretName: {{ .secretName }}
+            defaultMode: 0444
+        {{- end }}
+        {{- if .Values.persistence.enabled }}
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: {{ include "ironclaw.fullname" . }}
+        {{- else }}
+        - name: workspace
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.configFile.enabled }}
+        - name: config-file
+          secret:
+            secretName: {{ include "ironclaw.fullname" . }}-config
+        {{- end }}

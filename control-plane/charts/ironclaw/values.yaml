@@ -1,0 +1,182 @@
+image:
+  repository: ghcr.io/zackerydev/ironclaw
+  tag: "0.11.1"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+# Gateway (web UI + API)
+gateway:
+  port: 3000
+  host: "0.0.0.0"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+# Database — IronClaw requires PostgreSQL with pgvector.
+# When postgresql.enabled is true (default), a pgvector sidecar is installed
+# automatically and the DATABASE_URL is constructed from its values.
+# Set postgresql.enabled to false and provide database.url for BYO Postgres.
+database:
+  url: ""
+  poolSize: "10"
+
+# Built-in PostgreSQL with pgvector — deployed as a sidecar alongside IronClaw.
+postgresql:
+  enabled: true
+  image:
+    repository: pgvector/pgvector
+    tag: pg17
+    pullPolicy: IfNotPresent
+  database: ironclaw
+  username: ironclaw
+  password: ""
+  wait:
+    maxRetries: 20
+    retrySleepSeconds: 1
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# LLM inference provider configuration.
+# Supported backends: nearai, anthropic, openai, ollama, openai_compatible
+llm:
+  backend: "nearai"
+  model: "claude-sonnet-4-5-20250929"
+  # For NEAR AI: set sessionToken in secrets below
+  # For direct providers: set the provider's API key in secrets below
+  nearaiBaseUrl: "https://cloud-api.near.ai"
+
+# Agent behaviour
+agent:
+  name: "ironclaw"
+  maxParallelJobs: "5"
+  jobTimeoutSecs: "3600"
+  usePlanning: "true"
+
+# Sensitive values — injected as a Secret.
+# In production, use external-secrets or sealed-secrets instead.
+secrets:
+  # When true, skip creating the Secret (an ExternalSecret will create it)
+  external: false
+  # Path where secrets are mounted as individual files
+  mountPath: "/etc/claw/secrets"
+  # REQUIRED: token that protects the gateway API
+  gatewayAuthToken: ""
+  # NEAR AI session token (required when llm.backend=nearai)
+  nearaiSessionToken: ""
+  # Direct provider keys (use when llm.backend=anthropic|openai)
+  anthropicApiKey: ""
+  openaiApiKey: ""
+  # Reusable secret mounts — select existing ExternalSecrets to mount into this bot.
+  # Each entry mounts a K8s Secret as files under mountPath/<name>/.
+  # Example:
+  #   mounts:
+  #     - name: anthropic
+  #       secretName: anthropic-api-key
+  mounts: []
+
+# Database migrations — runs as an init container before the main process.
+# Disabled by default: current ironclaw images may not expose a stable
+# migration CLI subcommand across releases.
+migrations:
+  enabled: false
+  command: ["ironclaw", "migrate"]
+
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: ""
+
+healthCheck:
+  path: /api/health
+  port: 3000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  startupProbe:
+    enabled: true
+    failureThreshold: 30
+    periodSeconds: 5
+    timeoutSeconds: 1
+
+networkPolicy:
+  ingress: false
+  egress: false
+  # Use CiliumNetworkPolicy for DNS-aware egress filtering (requires Cilium CNI)
+  useCilium: false
+  # Allowed FQDNs for egress (only enforced when useCilium: true)
+  allowedDomains: []
+
+workspace:
+  enabled: false
+  provider: ""
+  s3:
+    bucket: ""
+    region: "us-east-1"
+    prefix: ""
+    secretName: ""
+  github:
+    repository: ""
+    branch: "main"
+    path: ""
+    secretName: ""
+
+env: {}
+
+backup:
+  enabled: false
+  restoreOnStartup: false
+  schedule: "0 */6 * * *"
+  mode: pgdump
+  image:
+    repository: ghcr.io/zackerydev/clawmachine
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  provider: "s3"
+  s3:
+    endpoint: ""
+    bucket: ""
+    region: "us-east-1"
+    prefix: ""
+  github:
+    repository: ""
+    branch: "backups"
+    path: ""
+  credentials:
+    accessKeyIdSecretRef:
+      name: ""
+      key: "value"
+    secretAccessKeySecretRef:
+      name: ""
+      key: "value"
+  credentialsSecret: ""
+  secretName: ""
+envSecrets: []
+
+# Config file mount — generates a Secret with bot config and mounts it as a file.
+configFile:
+  enabled: false
+  mountPath: "/home/ironclaw/.ironclaw"
+  fileName: "config.toml"
+  content: ""
+
+# Soul template files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md)
+# Created by ClawMachine during install when a persona is selected.

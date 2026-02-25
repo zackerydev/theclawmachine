@@ -1,0 +1,175 @@
+{{ define "bot-form-infra" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Install {{ .BotConfig.DisplayName }} (1/2)
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Install Wizard · Step 1 of 2</span>
+        <h1>Install {{ .BotConfig.DisplayName }}</h1>
+        <p class="muted">Infrastructure settings: storage, network, and workspace.</p>
+      </div>
+      <a href="/bots/new" class="btn btn-secondary">Change Bot Type</a>
+    </div>
+
+    <ol class="wizard-steps">
+      <li class="active">1. Infrastructure</li>
+      <li>2. {{ .BotConfig.DisplayName }} Config</li>
+    </ol>
+
+    <div class="card">
+      <form method="post" action="/bots/new/config">
+        <input type="hidden" name="botType" value="{{ .BotConfig.Name }}" />
+        <input type="hidden" name="onboardingVersion" value="{{ index .Values "onboardingVersion" }}" />
+
+        <fieldset class="form-fieldset">
+          <legend>Release Name</legend>
+          <input type="text" id="releaseName" name="releaseName" placeholder="my-bot" required pattern="[a-z0-9]([a-z0-9\\-]{0,61}[a-z0-9])?" value="{{ index .Values "releaseName" }}" />
+          <p class="help">Lowercase letters, numbers, and hyphens only (max 63 chars).</p>
+        </fieldset>
+
+        <div class="divider"></div>
+        <h2>Storage and Network</h2>
+
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="persistence" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="persistence" name="persistence" {{ if eq (index .Values "persistence") "on" }}checked{{ end }} />
+            Enable Persistence
+          </label>
+        </fieldset>
+
+        <fieldset class="form-fieldset" id="persistence-size-group">
+          <legend>Volume Size</legend>
+          <input type="text" name="persistenceSize" placeholder="5Gi" value="{{ if index .Values "persistenceSize" }}{{ index .Values "persistenceSize" }}{{ else }}5Gi{{ end }}" />
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="ingress" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="ingress" name="ingress" {{ if eq (index .Values "ingress") "on" }}checked{{ end }} />
+            Allow Network Ingress
+          </label>
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="egress" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="egress" name="egress" {{ if eq (index .Values "egress") "on" }}checked{{ end }} />
+            Allow All Network Egress
+          </label>
+        </fieldset>
+
+        <fieldset class="form-fieldset" id="allowedDomainsSection">
+          <legend>Allowed Domains (when egress is disabled)</legend>
+          <textarea id="allowedDomains" name="allowedDomains" rows="4" placeholder="*.openai.com&#10;discord.com">{{ index .Values "allowedDomains" }}</textarea>
+        </fieldset>
+
+        <div class="divider"></div>
+        <h2>Workspace Import</h2>
+
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="workspaceEnabled" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="workspaceEnabled" name="workspaceEnabled" {{ if eq (index .Values "workspaceEnabled") "on" }}checked{{ end }} />
+            Import Workspace
+          </label>
+        </fieldset>
+
+        <div id="workspace-fields">
+          <fieldset class="form-fieldset">
+            <legend>Provider</legend>
+            <select id="workspaceProvider" name="workspaceProvider">
+              <option value="s3" {{ if ne (index .Values "workspaceProvider") "github" }}selected{{ end }}>Amazon S3</option>
+              <option value="github" {{ if eq (index .Values "workspaceProvider") "github" }}selected{{ end }}>GitHub</option>
+            </select>
+          </fieldset>
+
+          <div id="ws-s3-fields">
+            <fieldset class="form-fieldset"><legend>S3 Bucket</legend><input type="text" name="wsS3Bucket" value="{{ index .Values "wsS3Bucket" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Region</legend><input type="text" name="wsS3Region" value="{{ if index .Values "wsS3Region" }}{{ index .Values "wsS3Region" }}{{ else }}us-east-1{{ end }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Prefix</legend><input type="text" name="wsS3Prefix" value="{{ index .Values "wsS3Prefix" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Credentials Secret Name</legend><input type="text" name="wsS3SecretName" value="{{ index .Values "wsS3SecretName" }}" /></fieldset>
+          </div>
+
+          <div id="ws-github-fields">
+            <fieldset class="form-fieldset"><legend>Repository</legend><input type="text" name="wsGithubRepo" value="{{ index .Values "wsGithubRepo" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Branch</legend><input type="text" name="wsGithubBranch" value="{{ if index .Values "wsGithubBranch" }}{{ index .Values "wsGithubBranch" }}{{ else }}main{{ end }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Path</legend><input type="text" name="wsGithubPath" value="{{ index .Values "wsGithubPath" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Credentials Secret Name</legend><input type="text" name="wsGithubSecretName" value="{{ index .Values "wsGithubSecretName" }}" /></fieldset>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <h2>Backup and Restore</h2>
+
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="backupEnabled" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="backupEnabled" name="backupEnabled" {{ if eq (index .Values "backupEnabled") "on" }}checked{{ end }} />
+            Enable Scheduled Backups
+          </label>
+        </fieldset>
+
+        <div id="backup-fields">
+          <fieldset class="form-fieldset">
+            <legend>Cron Schedule</legend>
+            <input type="text" name="backupSchedule" value="{{ if index .Values "backupSchedule" }}{{ index .Values "backupSchedule" }}{{ else }}0 */6 * * *{{ end }}" />
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>Backup Provider</legend>
+            <select id="backupProvider" name="backupProvider">
+              <option value="s3" {{ if ne (index .Values "backupProvider") "github" }}selected{{ end }}>Amazon S3</option>
+              <option value="github" {{ if eq (index .Values "backupProvider") "github" }}selected{{ end }}>GitHub</option>
+            </select>
+          </fieldset>
+
+          <div id="bk-s3-fields">
+            <fieldset class="form-fieldset"><legend>S3 Endpoint (optional)</legend><input type="text" name="bkS3Endpoint" value="{{ index .Values "bkS3Endpoint" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>S3 Bucket</legend><input type="text" name="bkS3Bucket" value="{{ index .Values "bkS3Bucket" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Region</legend><input type="text" name="bkS3Region" value="{{ if index .Values "bkS3Region" }}{{ index .Values "bkS3Region" }}{{ else }}us-east-1{{ end }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Prefix</legend><input type="text" name="bkS3Prefix" value="{{ index .Values "bkS3Prefix" }}" /></fieldset>
+          </div>
+
+          <div id="bk-github-fields">
+            <fieldset class="form-fieldset"><legend>Repository</legend><input type="text" name="bkGithubRepo" value="{{ index .Values "bkGithubRepo" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Branch</legend><input type="text" name="bkGithubBranch" value="{{ if index .Values "bkGithubBranch" }}{{ index .Values "bkGithubBranch" }}{{ else }}backups{{ end }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Path</legend><input type="text" name="bkGithubPath" value="{{ index .Values "bkGithubPath" }}" /></fieldset>
+          </div>
+
+          <fieldset class="form-fieldset">
+            <legend>Access Key Secret</legend>
+            <select name="backupAccessKeySecret">
+              <option value="">Select secret</option>
+              {{ range .Secrets }}
+                <option value="1p:{{ .Name }}" {{ if eq (index $.Values "backupAccessKeySecret") (printf "1p:%s" .Name) }}selected{{ end }}>{{ .Name }}{{ if .TargetSecret }} -> {{ .TargetSecret }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>Secret Key Secret</legend>
+            <select name="backupSecretKeySecret">
+              <option value="">Select secret</option>
+              {{ range .Secrets }}
+                <option value="1p:{{ .Name }}" {{ if eq (index $.Values "backupSecretKeySecret") (printf "1p:%s" .Name) }}selected{{ end }}>{{ .Name }}{{ if .TargetSecret }} -> {{ .TargetSecret }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </fieldset>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Next: {{ .BotConfig.DisplayName }} Config</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="/static/bot-form.js" defer></script>
+{{ end }}

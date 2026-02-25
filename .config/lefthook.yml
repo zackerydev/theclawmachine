@@ -1,0 +1,32 @@
+# https://lefthook.dev
+pre-commit:
+  parallel: true
+  commands:
+    vet:
+      glob: "*.go"
+      run: mise run vet
+    fix:
+      glob: "*.go"
+      run: mise run fix
+    lint:
+      glob: "*.go"
+      run: mise run lint
+    charts:
+      glob: "charts/**/*"
+      run: mise run charts
+    actionlint:
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: actionlint
+
+# pre-push:
+#   commands:
+#     vet:
+#       run: mise run vet
+#     lint:
+#       run: mise run lint
+#     fix:
+#       run: mise run fix
+#     test:
+#       run: mise run test
+#     e2e:
+#       run: mise run e2e

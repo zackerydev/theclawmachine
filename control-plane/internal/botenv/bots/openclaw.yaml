@@ -1,0 +1,152 @@
+name: openclaw
+displayName: OpenClaw
+description: Full-featured AI assistant with tools, memory, and multi-channel support
+order: 30
+
+sections:
+  - key: auth
+    label: LLM Provider
+    icon: key
+    fields:
+      - key: authChoice
+        label: Provider
+        type: select
+        default: "apiKey"
+        valuesPath: "auth.choice"
+        options:
+          - label: Anthropic
+            value: apiKey
+          - label: Google Gemini
+            value: gemini-api-key
+          - label: OpenAI
+            value: openai-api-key
+          - label: OpenRouter
+            value: openrouter-api-key
+
+      - key: anthropicApiKey
+        label: Anthropic API Key
+        type: password
+        placeholder: "sk-ant-..."
+        showWhen: "authChoice=apiKey"
+        valuesPath: "secrets.anthropicApiKey"
+        secret: true
+        fontMono: true
+
+      - key: geminiApiKey
+        label: Gemini API Key
+        type: password
+        placeholder: "AI..."
+        showWhen: "authChoice=gemini-api-key"
+        valuesPath: "secrets.geminiApiKey"
+        secret: true
+        fontMono: true
+
+      - key: openaiApiKey
+        label: OpenAI API Key
+        type: password
+        placeholder: "sk-..."
+        showWhen: "authChoice=openai-api-key"
+        valuesPath: "secrets.openaiApiKey"
+        secret: true
+        fontMono: true
+
+      - key: openrouterApiKey
+        label: OpenRouter API Key
+        type: password
+        placeholder: "sk-or-v1-..."
+        showWhen: "authChoice=openrouter-api-key"
+        valuesPath: "secrets.openrouterApiKey"
+        secret: true
+        fontMono: true
+        helpText: "Access 200+ models through a single key"
+
+      - key: defaultModel
+        label: Default Model
+        type: model
+        placeholder: "anthropic/claude-sonnet-4-5-20250929"
+        valuesPath: "agent.defaultModel"
+        fontMono: true
+        helpText: "Search models from OpenRouter or type any model ID"
+
+  - key: gateway
+    label: Gateway
+    icon: server
+    fields:
+      - key: gatewayToken
+        label: Gateway Auth Token
+        type: password
+        placeholder: "Long random token (openssl rand -hex 32)"
+        valuesPath: "secrets.gatewayToken"
+        secret: true
+        fontMono: true
+        helpText: "Protects the gateway API and should always be set."
+
+  - key: channels
+    label: Channels
+    icon: chat-bubble-left-right
+    description: "Enable messaging channels"
+    collapsible: true
+    fields:
+      - key: discordEnabled
+        label: Discord
+        type: checkbox
+        valuesPath: "channels.discord.enabled"
+
+      - key: discordBotToken
+        label: Discord Bot Token
+        type: password
+        placeholder: "Bot token from Discord Developer Portal"
+        showWhen: "discordEnabled=true"
+        valuesPath: "secrets.discordBotToken"
+        secret: true
+        fontMono: true
+
+      - key: telegramEnabled
+        label: Telegram
+        type: checkbox
+        valuesPath: "channels.telegram.enabled"
+
+      - key: telegramBotToken
+        label: Telegram Bot Token
+        type: password
+        placeholder: "Token from @BotFather"
+        showWhen: "telegramEnabled=true"
+        valuesPath: "secrets.telegramBotToken"
+        secret: true
+        fontMono: true
+
+      - key: slackEnabled
+        label: Slack
+        type: checkbox
+        valuesPath: "channels.slack.enabled"
+
+      - key: slackBotToken
+        label: Slack Bot Token
+        type: password
+        placeholder: "xoxb-..."
+        showWhen: "slackEnabled=true"
+        valuesPath: "secrets.slackBotToken"
+        secret: true
+        fontMono: true
+
+      - key: slackAppToken
+        label: Slack App Token
+        type: password
+        placeholder: "xapp-..."
+        showWhen: "slackEnabled=true"
+        valuesPath: "secrets.slackAppToken"
+        secret: true
+        fontMono: true
+
+  - key: agent
+    label: Agent
+    icon: cog
+    collapsible: true
+    collapsedByDefault: true
+    fields:
+      - key: agentName
+        label: Agent Name
+        type: text
+        placeholder: "my-assistant"
+        valuesPath: "agent.name"
+        helpText: "Display name for the agent"

@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ironclaw.fullname" . }}
+  labels:
+    {{- include "ironclaw.labels" . | nindent 4 }}
+data:
+  BOT_TYPE: ironclaw
+  CLI_ENABLED: "false"
+  GATEWAY_ENABLED: "true"
+  GATEWAY_HOST: {{ .Values.gateway.host | quote }}
+  GATEWAY_PORT: {{ .Values.gateway.port | quote }}
+  DATABASE_POOL_SIZE: {{ .Values.database.poolSize | quote }}
+  LLM_BACKEND: {{ .Values.llm.backend | quote }}
+  NEARAI_MODEL: {{ .Values.llm.model | quote }}
+  NEARAI_BASE_URL: {{ .Values.llm.nearaiBaseUrl | quote }}
+  AGENT_NAME: {{ .Values.agent.name | quote }}
+  AGENT_MAX_PARALLEL_JOBS: {{ .Values.agent.maxParallelJobs | quote }}
+  AGENT_JOB_TIMEOUT_SECS: {{ .Values.agent.jobTimeoutSecs | quote }}
+  AGENT_USE_PLANNING: {{ .Values.agent.usePlanning | quote }}
+  SAFETY_INJECTION_CHECK_ENABLED: "true"
+  RUST_LOG: "ironclaw=info"
+  {{- range $key, $value := .Values.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,0 +1,123 @@
+{{ define "bot-form-config" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Install {{ .BotConfig.DisplayName }} (2/2)
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Install Wizard · Step 2 of 2</span>
+        <h1>Install {{ .BotConfig.DisplayName }}</h1>
+        <p class="muted">Bot-specific configuration.</p>
+      </div>
+    </div>
+
+    <ol class="wizard-steps">
+      <li class="done">1. Infrastructure</li>
+      <li class="active">2. {{ .BotConfig.DisplayName }} Config</li>
+    </ol>
+
+    <div class="card">
+      <form method="post" action="/bots" id="config-form">
+        <input type="hidden" name="botType" value="{{ index .Values "botType" }}" />
+        <input type="hidden" name="onboardingVersion" value="{{ index .Values "onboardingVersion" }}" />
+        <input type="hidden" name="releaseName" value="{{ index .Values "releaseName" }}" />
+        <input type="hidden" name="persistence" value="{{ index .Values "persistence" }}" />
+        <input type="hidden" name="persistenceSize" value="{{ index .Values "persistenceSize" }}" />
+        <input type="hidden" name="ingress" value="{{ index .Values "ingress" }}" />
+        <input type="hidden" name="egress" value="{{ index .Values "egress" }}" />
+        <input type="hidden" name="allowedDomains" value="{{ index .Values "allowedDomains" }}" />
+        <input type="hidden" name="workspaceEnabled" value="{{ index .Values "workspaceEnabled" }}" />
+        <input type="hidden" name="workspaceProvider" value="{{ index .Values "workspaceProvider" }}" />
+        <input type="hidden" name="wsS3Bucket" value="{{ index .Values "wsS3Bucket" }}" />
+        <input type="hidden" name="wsS3Region" value="{{ index .Values "wsS3Region" }}" />
+        <input type="hidden" name="wsS3Prefix" value="{{ index .Values "wsS3Prefix" }}" />
+        <input type="hidden" name="wsS3SecretName" value="{{ index .Values "wsS3SecretName" }}" />
+        <input type="hidden" name="wsGithubRepo" value="{{ index .Values "wsGithubRepo" }}" />
+        <input type="hidden" name="wsGithubBranch" value="{{ index .Values "wsGithubBranch" }}" />
+        <input type="hidden" name="wsGithubPath" value="{{ index .Values "wsGithubPath" }}" />
+        <input type="hidden" name="wsGithubSecretName" value="{{ index .Values "wsGithubSecretName" }}" />
+        <input type="hidden" name="backupEnabled" value="{{ index .Values "backupEnabled" }}" />
+        <input type="hidden" name="backupSchedule" value="{{ index .Values "backupSchedule" }}" />
+        <input type="hidden" name="backupProvider" value="{{ index .Values "backupProvider" }}" />
+        <input type="hidden" name="bkS3Endpoint" value="{{ index .Values "bkS3Endpoint" }}" />
+        <input type="hidden" name="bkS3Bucket" value="{{ index .Values "bkS3Bucket" }}" />
+        <input type="hidden" name="bkS3Region" value="{{ index .Values "bkS3Region" }}" />
+        <input type="hidden" name="bkS3Prefix" value="{{ index .Values "bkS3Prefix" }}" />
+        <input type="hidden" name="bkGithubRepo" value="{{ index .Values "bkGithubRepo" }}" />
+        <input type="hidden" name="bkGithubBranch" value="{{ index .Values "bkGithubBranch" }}" />
+        <input type="hidden" name="bkGithubPath" value="{{ index .Values "bkGithubPath" }}" />
+        <input type="hidden" name="backupAccessKeySecret" value="{{ index .Values "backupAccessKeySecret" }}" />
+        <input type="hidden" name="backupSecretKeySecret" value="{{ index .Values "backupSecretKeySecret" }}" />
+
+        {{ range .Sections }}
+          <div class="config-section">
+            <h2>{{ .Label }}</h2>
+            {{ if .Description }}
+              <p class="muted">{{ .Description }}</p>
+            {{ end }}
+
+            {{ range .Questions }}
+              {{ $cfgKey := printf "cfg:%s" .ID }}
+              <fieldset class="form-fieldset"{{ if .ShowWhen }} data-show-when="{{ .ShowWhen.QuestionID }}={{ .ShowWhen.Equals }}"{{ end }}>
+                {{ if eq .Type "checkbox" }}
+                  <input type="hidden" name="{{ $cfgKey }}" value="false" />
+                  <label class="checkbox-row">
+                    <input type="checkbox" id="cfg-{{ .ID }}" name="{{ $cfgKey }}" {{ if or (eq (index $.Values $cfgKey) "true") (eq (index $.Values $cfgKey) "on") (eq (index $.Values $cfgKey) "1") }}checked{{ end }} />
+                    {{ .Label }}
+                  </label>
+                {{ else if eq .Type "select" }}
+                  <legend>{{ .Label }}</legend>
+                  {{ $qDefault := .Default }}
+                  <select id="cfg-{{ .ID }}" name="{{ $cfgKey }}" {{ if .Required }}required{{ end }}>
+                    {{ range .Options }}
+                      <option value="{{ .Value }}" {{ if eq (index $.Values $cfgKey) .Value }}selected{{ else if and (eq (index $.Values $cfgKey) "") (eq $qDefault .Value) }}selected{{ end }}>{{ .Label }}</option>
+                    {{ end }}
+                  </select>
+                {{ else if and (eq .Type "password") .Secret }}
+                  <legend>{{ .Label }}</legend>
+                  <select id="cfg-{{ .ID }}" name="{{ $cfgKey }}" {{ if .Required }}required{{ end }}>
+                    <option value="">Select secret</option>
+                    {{ range $.Secrets }}
+                      <option value="1p:{{ .Name }}" {{ if eq (index $.Values $cfgKey) (printf "1p:%s" .Name) }}selected{{ end }}>{{ .Name }}{{ if .TargetSecret }} -> {{ .TargetSecret }}{{ end }}</option>
+                    {{ end }}
+                  </select>
+                  <p class="help">Secrets are referenced from synced ExternalSecrets.</p>
+                {{ else if eq .Type "textarea" }}
+                  <legend>{{ .Label }}</legend>
+                  <textarea id="cfg-{{ .ID }}" name="{{ $cfgKey }}" rows="4" placeholder="{{ .Placeholder }}" {{ if .Required }}required{{ end }}>{{ if index $.Values $cfgKey }}{{ index $.Values $cfgKey }}{{ else }}{{ .Default }}{{ end }}</textarea>
+                {{ else if eq .Type "model" }}
+                  <legend>{{ .Label }}</legend>
+                  <div data-model-picker class="model-picker">
+                    <input type="text" id="cfg-{{ .ID }}" name="{{ $cfgKey }}" placeholder="{{ if .Placeholder }}{{ .Placeholder }}{{ else }}Search models...{{ end }}" value="{{ if index $.Values $cfgKey }}{{ index $.Values $cfgKey }}{{ else }}{{ .Default }}{{ end }}" autocomplete="off" {{ if .Required }}required{{ end }} />
+                    <div class="model-dropdown" data-model-dropdown></div>
+                  </div>
+                {{ else }}
+                  <legend>{{ .Label }}</legend>
+                  <input type="{{ .Type }}" id="cfg-{{ .ID }}" name="{{ $cfgKey }}" placeholder="{{ .Placeholder }}" value="{{ if index $.Values $cfgKey }}{{ index $.Values $cfgKey }}{{ else }}{{ .Default }}{{ end }}" {{ if .Required }}required{{ end }} />
+                {{ end }}
+                {{ if .HelpText }}
+                  <p class="help">{{ .HelpText }}</p>
+                {{ end }}
+              </fieldset>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        <div class="actions">
+          <button type="submit" formaction="/bots/new/infra" class="btn btn-secondary">Back</button>
+          <button type="submit" id="install-bot-btn" class="btn btn-primary">
+            <span class="install-btn-idle">Install Bot</span>
+            <span class="install-btn-busy spinner-wrap"><span class="spinner"></span> Installing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="/static/bot-form.js" defer></script>
+{{ end }}

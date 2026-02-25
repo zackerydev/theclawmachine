@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ironclaw
+description: IronClaw secure AI assistant bot for ClawMachine
+type: application
+version: 0.1.0
+appVersion: "0.11.1"

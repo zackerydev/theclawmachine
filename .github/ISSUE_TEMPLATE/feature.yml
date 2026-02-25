@@ -1,0 +1,23 @@
+name: Feature Request
+description: Got an idea? Keep it simple.
+labels: ["Feature"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What do you want?
+      description: One paragraph max. If you need more, it's too big — break it up.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: Anything else?
+      description: Mockups, references, prior art. Optional.

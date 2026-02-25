@@ -1,0 +1,87 @@
+version: 2
+
+project_name: clawmachine
+
+before:
+  hooks:
+    - mise run charts
+
+builds:
+  - id: clawmachine
+    dir: control-plane
+    main: ./cmd/clawmachine/
+    binary: clawmachine
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+homebrew_casks:
+  - repository:
+      owner: zackerydev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/zackerydev/clawmachine
+    description: Kubernetes-native dashboard for AI bots
+
+dockers_v2:
+  - dockerfile: control-plane/Dockerfile
+    images:
+      - ghcr.io/zackerydev/clawmachine
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "{{ .GitURL }}"
+    extra_files:
+      - control-plane
+
+release:
+  github:
+    owner: zackerydev
+    name: clawmachine
+  prerelease: auto
+  name_template: "v{{ .Version }}"

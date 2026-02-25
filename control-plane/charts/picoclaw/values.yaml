@@ -1,0 +1,103 @@
+image:
+  repository: ghcr.io/zackerydev/picoclaw
+  tag: "0.1.2"
+  pullPolicy: IfNotPresent
+
+replicas: 1
+
+service:
+  type: ClusterIP
+  port: 18790
+
+# Environment variables sourced from pre-registered secrets (secrets-first flow).
+# Example:
+#   envSecrets:
+#     - envVar: DISCORD_BOT_TOKEN
+#       secretName: discord-secrets
+#       secretKey: token
+envSecrets: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+persistence:
+  enabled: false
+  size: 1Gi
+  storageClass: ""
+
+healthCheck:
+  path: /health
+  port: 18790
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+networkPolicy:
+  ingress: false
+  egress: false
+  # Use CiliumNetworkPolicy for DNS-aware egress filtering (requires Cilium CNI)
+  useCilium: false
+  # Allowed FQDNs for egress (only enforced when useCilium: true)
+  allowedDomains: []
+
+
+env: {}
+
+# Config file mount — generates a Secret with bot config and mounts it as a file.
+configFile:
+  enabled: false
+  mountPath: "/home/picoclaw/.picoclaw"
+  fileName: "config.json"
+  content: ""
+
+# Soul template files (SOUL.md, IDENTITY.md, AGENTS.md, USER.md)
+# Created by ClawMachine during install when a persona is selected.
+
+# Workspace import — sync workspace from S3 or GitHub on startup
+workspace:
+  enabled: false
+  provider: ""  # "s3" or "github"
+  s3:
+    bucket: ""
+    region: "us-east-1"
+    prefix: ""
+    secretName: ""
+  github:
+    repository: ""
+    branch: "main"
+    path: ""
+    secretName: ""
+
+# Automated backup via CronJob
+backup:
+  enabled: false
+  restoreOnStartup: false
+  schedule: "0 */6 * * *"
+  mode: filesystem
+  image:
+    repository: ghcr.io/zackerydev/clawmachine
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  provider: ""  # "s3" or "github"
+  credentials:
+    accessKeyIdSecretRef:
+      name: ""
+      key: "value"
+    secretAccessKeySecretRef:
+      name: ""
+      key: "value"
+  credentialsSecret: ""
+  secretName: ""
+  s3:
+    endpoint: ""
+    bucket: ""
+    region: "us-east-1"
+    prefix: ""
+  github:
+    repository: ""
+    branch: "main"
+    path: ""

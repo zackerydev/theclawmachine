@@ -1,0 +1,5 @@
+name: busybox
+displayName: BusyBox
+description: Minimal debug container for testing and development
+order: 99
+fields: []

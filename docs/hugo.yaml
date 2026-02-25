@@ -1,0 +1,60 @@
+baseURL: https://theclawmachine.dev/
+title: ClawMachine Docs
+languageCode: en-us
+
+module:
+  imports:
+    - path: github.com/imfing/hextra
+
+markup:
+  highlight:
+    noClasses: false
+  goldmark:
+    renderer:
+      unsafe: true
+
+taxonomies: {}
+
+enableRobotsTXT: true
+enableGitInfo: false
+
+outputs:
+  home: [HTML]
+  section: [HTML]
+
+menu:
+  main:
+    - name: Docs
+      pageRef: /docs
+      weight: 1
+    - name: Quick Start
+      pageRef: /docs/getting-started
+      weight: 2
+    - name: Bots
+      pageRef: /docs/bots
+      weight: 3
+    - name: GitHub
+      url: https://github.com/zackerydev/clawmachine
+      weight: 4
+      params:
+        icon: github
+
+params:
+  description: "ClawMachine is a Kubernetes-native dashboard for deploying and managing Claw bots — IronClaw, PicoClaw, and OpenClaw — with a single Helm install."
+  navbar:
+    displayTitle: true
+    displayLogo: true
+  page:
+    width: wide
+  theme:
+    default: dark
+    primary:
+      dark: "#8ec07c"
+    foreground:
+      dark: "#e2e8f0"
+  footer:
+    displayPoweredBy: false
+  editURL:
+    enable: false
+  customCSS:
+    - css/custom.css

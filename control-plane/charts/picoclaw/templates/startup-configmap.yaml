@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "picoclaw.fullname" . }}-startup
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+data:
+  start-picoclaw.sh: |
+    #!/bin/sh
+    set -e
+
+    # Load secrets from volume files into environment
+    SECRETS_DIR="/etc/claw/secrets"
+    if [ -d "$SECRETS_DIR" ]; then
+      for secret_file in "$SECRETS_DIR"/*; do
+        [ -f "$secret_file" ] || continue
+        key="$(basename "$secret_file")"
+        export "$key"="$(cat "$secret_file")"
+      done
+    fi
+
+    # Exec the picoclaw binary
+    exec /usr/local/bin/picoclaw "$@"

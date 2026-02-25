@@ -1,0 +1,83 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "picoclaw.fullname" . }}-backup
+  labels:
+    {{- include "picoclaw.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: "{{ .Values.backup.image.repository }}:{{ .Values.backup.image.tag }}"
+              imagePullPolicy: {{ .Values.backup.image.pullPolicy }}
+              securityContext:
+                runAsUser: 0
+                runAsGroup: 0
+                runAsNonRoot: false
+              args:
+                - backup
+                - --mode
+                - {{ .Values.backup.mode }}
+                - --workspace
+                - /workspace
+                - --bucket
+                - {{ .Values.backup.s3.bucket | quote }}
+                - --endpoint
+                - {{ .Values.backup.s3.endpoint | quote }}
+                - --region
+                - {{ .Values.backup.s3.region | quote }}
+                - --prefix
+                - {{ .Values.backup.s3.prefix | default (include "picoclaw.fullname" .) | quote }}
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+              {{- $accessName := .Values.backup.credentials.accessKeyIdSecretRef.name }}
+              {{- $accessKey := .Values.backup.credentials.accessKeyIdSecretRef.key | default "value" }}
+              {{- $secretName := .Values.backup.credentials.secretAccessKeySecretRef.name }}
+              {{- $secretKey := .Values.backup.credentials.secretAccessKeySecretRef.key | default "value" }}
+              {{- if or .Values.backup.s3.endpoint $accessName $secretName }}
+              env:
+                {{- if .Values.backup.s3.endpoint }}
+                - name: AWS_ENDPOINT_URL
+                  value: {{ .Values.backup.s3.endpoint | quote }}
+                {{- end }}
+                {{- if $accessName }}
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $accessName }}
+                      key: {{ $accessKey }}
+                {{- end }}
+                {{- if $secretName }}
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ $secretName }}
+                      key: {{ $secretKey }}
+                {{- end }}
+              {{- end }}
+              {{- if and (not $accessName) (not $secretName) .Values.backup.credentialsSecret }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.backup.credentialsSecret }}
+              {{- else if and (not $accessName) (not $secretName) .Values.backup.secretName }}
+              envFrom:
+                - secretRef:
+                    name: {{ .Values.backup.secretName }}
+              {{- else if and (not $accessName) (not $secretName) (not .Values.backup.credentialsSecret) (not .Values.backup.secretName) }}
+              envFrom:
+                - secretRef:
+                    name: {{ printf "%s-backup" (include "picoclaw.fullname" .) }}
+              {{- end }}
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: {{ include "picoclaw.fullname" . }}
+{{- end }}

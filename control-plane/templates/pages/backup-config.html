@@ -1,0 +1,111 @@
+{{ define "backup-config" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - {{ .Name }} Backup
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Backup Configuration</span>
+        <h1>{{ .Name }} Backup</h1>
+        <p class="muted">Scheduled backup and restore for {{ .BotType }}.</p>
+      </div>
+      <a href="/bots/{{ .Name }}/page" class="btn btn-secondary">← Back to Bot</a>
+    </div>
+
+    <div id="backup-save-result"></div>
+
+    <div class="card">
+      <form method="post" action="/bots/{{ .Name }}/backup" hx-post="/bots/{{ .Name }}/backup" hx-target="#backup-save-result" hx-swap="innerHTML">
+        <fieldset class="form-fieldset">
+          <input type="hidden" name="backupEnabled" value="false" />
+          <label class="checkbox-row">
+            <input type="checkbox" id="backupEnabled" name="backupEnabled" {{ if eq (index .Values "backupEnabled") "on" }}checked{{ end }} />
+            Enable Scheduled Backups
+          </label>
+        </fieldset>
+
+        {{ if eq (index .Values "backupEnabled") "on" }}
+          <p class="muted">
+            Last successful backup:
+            {{ if .LastBackupKnown }}
+              <code>{{ .LastBackupLabel }}</code>
+            {{ else if .LastBackupLookupError }}
+              unavailable (unable to query cluster status)
+            {{ else }}
+              never
+            {{ end }}
+          </p>
+        {{ end }}
+
+        <details id="backup-fields">
+          <summary>Backup Settings</summary>
+
+          <fieldset class="form-fieldset">
+            <legend>Cron Schedule</legend>
+            <input type="text" name="backupSchedule" value="{{ index .Values "backupSchedule" }}" />
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <input type="hidden" name="backupRestoreOnStartup" value="false" />
+            <label class="checkbox-row">
+              <input type="checkbox" name="backupRestoreOnStartup" {{ if eq (index .Values "backupRestoreOnStartup") "on" }}checked{{ end }} />
+              Restore latest backup on startup
+            </label>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>Backup Provider</legend>
+            <select id="backupProvider" name="backupProvider">
+              <option value="s3" {{ if ne (index .Values "backupProvider") "github" }}selected{{ end }}>Amazon S3</option>
+              <option value="github" {{ if eq (index .Values "backupProvider") "github" }}selected{{ end }}>GitHub</option>
+            </select>
+          </fieldset>
+
+          <div id="bk-s3-fields">
+            <fieldset class="form-fieldset"><legend>S3 Endpoint (optional)</legend><input type="text" name="bkS3Endpoint" value="{{ index .Values "bkS3Endpoint" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>S3 Bucket</legend><input type="text" name="bkS3Bucket" value="{{ index .Values "bkS3Bucket" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Region</legend><input type="text" name="bkS3Region" value="{{ index .Values "bkS3Region" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Prefix</legend><input type="text" name="bkS3Prefix" value="{{ index .Values "bkS3Prefix" }}" /></fieldset>
+          </div>
+
+          <div id="bk-github-fields">
+            <fieldset class="form-fieldset"><legend>Repository</legend><input type="text" name="bkGithubRepo" value="{{ index .Values "bkGithubRepo" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Branch</legend><input type="text" name="bkGithubBranch" value="{{ index .Values "bkGithubBranch" }}" /></fieldset>
+            <fieldset class="form-fieldset"><legend>Path</legend><input type="text" name="bkGithubPath" value="{{ index .Values "bkGithubPath" }}" /></fieldset>
+          </div>
+
+          <fieldset class="form-fieldset">
+            <legend>Access Key Secret</legend>
+            <select name="backupAccessKeySecret">
+              <option value="">Select secret</option>
+              {{ range .Secrets }}
+                <option value="1p:{{ .Name }}" {{ if eq (index $.Values "backupAccessKeySecret") .Name }}selected{{ end }}>{{ .Name }}{{ if .TargetSecret }} -> {{ .TargetSecret }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend>Secret Key Secret</legend>
+            <select name="backupSecretKeySecret">
+              <option value="">Select secret</option>
+              {{ range .Secrets }}
+                <option value="1p:{{ .Name }}" {{ if eq (index $.Values "backupSecretKeySecret") .Name }}selected{{ end }}>{{ .Name }}{{ if .TargetSecret }} -> {{ .TargetSecret }}{{ end }}</option>
+              {{ end }}
+            </select>
+          </fieldset>
+        </details>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Save Backup Configuration</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="/static/bot-form.js" defer></script>
+{{ end }}

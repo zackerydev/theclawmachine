@@ -1,0 +1,322 @@
+{{ define "bot-detail" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - {{ .Name }}
+{{ end }}
+
+{{ define "content" }}
+  <section id="bot-detail-page" data-bot-name="{{ .Name }}" data-bot-type="{{ .BotType }}">
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Bot Detail</span>
+        <h1>{{ .Name }}</h1>
+        <p class="muted">Live telemetry, logs, and configuration.</p>
+      </div>
+      <a href="/" class="btn btn-secondary">← Back</a>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="detail-meta">
+        <div>
+          <span class="label">Helm Status</span>
+          <div>
+            {{ if eq .Status "deployed" }}
+              <span class="badge badge-success">deployed</span>
+            {{ else if eq .Status "failed" }}
+              <span class="badge badge-error">failed</span>
+            {{ else if eq .Status "pending-install" }}
+              <span class="badge badge-warning">pending-install</span>
+            {{ else if eq .Status "pending-upgrade" }}
+              <span class="badge badge-warning">pending-upgrade</span>
+            {{ else if eq .Status "uninstalling" }}
+              <span class="badge badge-warning">uninstalling</span>
+            {{ else }}
+              <span class="badge badge-ghost">{{ .Status }}</span>
+            {{ end }}
+          </div>
+        </div>
+        <div>
+          <span class="label">Pod Status</span>
+          <div>
+            {{ if eq .PodStatus "healthy" }}
+              <span class="badge badge-success">healthy</span>
+            {{ else if eq .PodStatus "unhealthy" }}
+              <span class="badge badge-warning">unhealthy</span>
+            {{ else }}
+              <span class="badge badge-ghost">unknown</span>
+            {{ end }}
+          </div>
+        </div>
+        <div>
+          <span class="label">Bot Type</span>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:var(--cm-text-muted)">{{ .BotType }}</div>
+        </div>
+        <div>
+          <span class="label">Version</span>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:var(--cm-text-muted)">{{ .Version }}</div>
+        </div>
+        <div>
+          <span class="label">Updated</span>
+          <div style="font-size:0.82rem;color:var(--cm-text-dim)">{{ .Updated }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-tabs" role="tablist" aria-label="Bot details tabs">
+      <button type="button" class="detail-tab active" data-tab="overview">Overview</button>
+      <button type="button" class="detail-tab" data-tab="logs">Logs</button>
+      <button type="button" class="detail-tab" data-tab="network">Network</button>
+      <button type="button" class="detail-tab" data-tab="cli">CLI</button>
+      <button type="button" class="detail-tab" data-tab="backup">Backup</button>
+      <button type="button" class="detail-tab" data-tab="settings">Settings</button>
+      {{ if .ConfigTab }}
+        <button type="button" class="detail-tab" data-tab="config">Config</button>
+      {{ end }}
+    </div>
+
+    <div id="settings-error"></div>
+
+    <div class="detail-panel active" data-panel="overview">
+      <div class="card">
+        <span class="eyebrow">// Core Runtime</span>
+        <div class="detail-meta">
+          <div>
+            <span class="label">Persistence</span>
+            <div>
+              {{ if .Persistence }}
+                <span class="badge badge-success">enabled</span>
+              {{ else }}
+                <span class="badge badge-ghost">disabled</span>
+              {{ end }}
+            </div>
+          </div>
+          <div>
+            <span class="label">Allowed Domains</span>
+            <div>
+              {{ if .AllowedDomains }}
+                {{ range .AllowedDomains }}
+                  <code>{{ . }}</code>
+                {{ end }}
+              {{ else }}
+                <span style="color:var(--cm-text-dim);font-size:0.82rem">none configured</span>
+              {{ end }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" data-panel="logs">
+      <div class="card">
+        <div class="panel-header">
+          <span class="eyebrow" style="margin:0">// Pod Logs</span>
+          <button class="btn btn-secondary btn-sm" hx-get="/bots/{{ .Name }}/logs" hx-target="#log-output" hx-swap="innerHTML" hx-indicator="#log-spinner">
+            Refresh
+            <span id="log-spinner" class="htmx-indicator spinner-wrap"><span class="spinner"></span></span>
+          </button>
+        </div>
+        <div
+          id="log-output"
+          class="log-output"
+          hx-get="/bots/{{ .Name }}/logs"
+          hx-trigger="load, every 10s"
+          hx-target="this"
+          hx-swap="innerHTML"
+          hx-indicator="#log-spinner"
+        >
+          <span style="color:var(--cm-text-dim)">Loading logs...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" data-panel="network">
+      <div class="card">
+        <div class="panel-header">
+          <span class="eyebrow" style="margin:0">// Network Requests</span>
+          <button class="btn btn-secondary btn-sm" hx-get="/bots/{{ .Name }}/network" hx-target="#network-output" hx-swap="innerHTML" hx-indicator="#network-spinner">
+            Refresh
+            <span id="network-spinner" class="htmx-indicator spinner-wrap"><span class="spinner"></span></span>
+          </button>
+        </div>
+        <div
+          id="network-output"
+          hx-get="/bots/{{ .Name }}/network"
+          hx-trigger="load, every 10s"
+          hx-target="this"
+          hx-swap="innerHTML"
+          hx-indicator="#network-spinner"
+        >
+          <span style="color:var(--cm-text-dim)">Loading network activity...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" data-panel="cli">
+      <div class="card">
+        <span class="eyebrow">// Bot CLI</span>
+        {{ if eq .BotType "openclaw" }}
+          <p class="help" style="margin-bottom:0.85rem">Runs inside the bot pod as <code>openclaw &lt;args&gt;</code>.</p>
+          <form hx-post="/bots/{{ .Name }}/cli" hx-target="#cli-output" hx-swap="innerHTML" hx-indicator="#cli-run-spinner">
+            <div class="form-fieldset">
+              <legend>Arguments</legend>
+              <input type="text" name="args" placeholder="pairing approve discord 123456" required />
+              <p class="help">Example: <code>pairing approve discord &lt;code&gt;</code></p>
+            </div>
+            <div class="actions">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <span class="cli-run-idle">Run Command</span>
+                <span id="cli-run-spinner" class="htmx-indicator spinner-wrap"><span class="spinner spinner-dark"></span> Running...</span>
+              </button>
+            </div>
+          </form>
+        {{ else }}
+          <p style="color:var(--cm-text-dim);font-size:0.875rem">CLI execution is currently available only for openclaw bots.</p>
+        {{ end }}
+        <div id="cli-output" class="mb-4"></div>
+      </div>
+    </div>
+
+    <div class="detail-panel" data-panel="backup">
+      <div class="card">
+        <div
+          id="backup-config-panel"
+          hx-get="/bots/{{ .Name }}/backup"
+          hx-trigger="load"
+          hx-target="this"
+          hx-swap="innerHTML"
+        >
+          <span style="color:var(--cm-text-dim)">Loading backup configuration...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" data-panel="settings">
+      <div class="card">
+        <span class="eyebrow">// Core Settings</span>
+        <div class="form-fieldset">
+          <label class="checkbox-row">
+            <input type="checkbox" id="cfg-persistence" {{ if .Persistence }}checked{{ end }} />
+            Persistent storage enabled
+          </label>
+        </div>
+        <div class="form-fieldset">
+          <label class="checkbox-row">
+            <input type="checkbox" id="cfg-ingress" {{ if and (index .Values "networkPolicy.ingress") (eq (formatValue (index .Values "networkPolicy.ingress")) "true") }}checked{{ end }} />
+            Allow ingress
+          </label>
+        </div>
+        <div class="form-fieldset">
+          <label class="checkbox-row">
+            <input type="checkbox" id="cfg-egress" {{ if and (index .Values "networkPolicy.egress") (eq (formatValue (index .Values "networkPolicy.egress")) "true") }}checked{{ end }} />
+            Allow all egress
+          </label>
+          <p class="help">When disabled, only configured domains are allowed.</p>
+        </div>
+        <div class="form-fieldset">
+          <legend class="label">Allowed Domains</legend>
+          <textarea id="cfg-domains" rows="4" placeholder="One domain per line">{{ range $i, $d := .AllowedDomains }}{{ if $i }}
+{{ end }}{{ $d }}{{ end }}</textarea>
+        </div>
+        <div class="actions">
+          <button type="button" id="save-settings-btn" class="btn btn-primary">
+            <span class="save-settings-idle">Save Settings</span>
+            <span class="htmx-indicator spinner-wrap"><span class="spinner spinner-dark"></span> Saving...</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card danger-card">
+        <span class="eyebrow" style="color:var(--cm-red);opacity:0.8">// Danger Zone</span>
+        <div class="actions" style="margin-top:0.5rem">
+          <button
+            class="btn btn-danger-outline"
+            hx-post="/bots/{{ .Name }}/restart"
+            hx-confirm="Restart {{ .Name }}?"
+            hx-target="#settings-error"
+            hx-swap="innerHTML"
+          >
+            Restart Bot
+          </button>
+          <button
+            class="btn btn-danger"
+            hx-delete="/bots/{{ .Name }}"
+            hx-confirm="Uninstall {{ .Name }}? This cannot be undone."
+            hx-target="#settings-error"
+            hx-swap="innerHTML"
+          >
+            Uninstall Bot
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {{ if .ConfigTab }}
+      <div class="detail-panel" data-panel="config">
+        <div class="card">
+          <div class="panel-header">
+            <span class="eyebrow" style="margin:0">// {{ .BotConfig.DisplayName }} Config</span>
+            {{ if .ConfigEditable }}
+              <button type="button" id="toggle-config-editor-btn" class="btn btn-secondary btn-sm">Edit JSON</button>
+            {{ end }}
+          </div>
+
+          <p class="help" style="margin-bottom:0.85rem">
+            Secret fields use tokens like <code>{{"{{secret.my-secret}}"}}</code>. Manage secrets in the Secrets tab.
+          </p>
+
+          {{ if .ConfigWarning }}
+            <div class="alert alert-warning">{{ .ConfigWarning }}</div>
+          {{ end }}
+
+          <div id="config-view">
+            <pre class="log-output">{{ .ConfigContent }}</pre>
+          </div>
+
+          {{ if .ConfigEditable }}
+            <div id="config-editor" style="display: none;">
+              <div class="form-fieldset">
+                <legend>Config JSON</legend>
+                <textarea id="config-content" rows="18" class="mono">{{ .ConfigContent }}</textarea>
+              </div>
+
+              <div class="actions">
+                <button type="button" id="format-config-btn" class="btn btn-secondary btn-sm">Format JSON</button>
+                <button type="button" id="validate-config-btn" class="btn btn-secondary btn-sm">Validate</button>
+              </div>
+
+              {{ if .AvailableSecrets }}
+                <div class="form-fieldset">
+                  <legend>Insert Secret Token</legend>
+                  <div class="actions">
+                    {{ range .AvailableSecrets }}
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm copy-secret-token-btn"
+                        data-secret-token="{{"{{secret."}}{{ .Name }}{{"}}"}}"
+                        title="Copy {{"{{secret."}}{{ .Name }}{{"}}"}}"
+                      >
+                        {{ .Name }}
+                      </button>
+                    {{ end }}
+                  </div>
+                </div>
+              {{ end }}
+
+              <div class="actions">
+                <button type="button" id="cancel-config-btn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="save-config-btn" class="btn btn-primary">
+                  <span class="save-config-idle">Save & Restart</span>
+                  <span class="htmx-indicator spinner-wrap"><span class="spinner spinner-dark"></span> Saving...</span>
+                </button>
+              </div>
+            </div>
+          {{ end }}
+        </div>
+      </div>
+    {{ end }}
+  </section>
+
+  <script src="/static/bot-detail.js" defer></script>
+{{ end }}

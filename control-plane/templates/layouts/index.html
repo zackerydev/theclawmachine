@@ -1,0 +1,47 @@
+{{ define "layout" }}
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta
+        name="htmx-config"
+        content='{"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"[45]..","swap":true,"error":true}]}'
+      />
+      <script>
+        (() => {
+          try { document.documentElement.setAttribute("data-theme", "dark"); } catch (_) {}
+        })();
+      </script>
+      <title>ClawMachine{{ block "title" . }}{{ end }}</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <link rel="stylesheet" href="/static/ui.css" />
+      <script src="/static/htmx.min.js" defer></script>
+      <script src="/static/theme.js" defer></script>
+    </head>
+    <body>
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="/">
+            <img src="/static/clawmachine.png" alt="" width="26" height="26" style="border-radius:50%;display:block;flex-shrink:0" />
+            // ClawMachine
+          </a>
+          <div class="topbar-right">
+            <nav class="nav-links">
+              <a href="/">Bots</a>
+              <a href="/secrets">Secrets</a>
+              <a href="/settings">Settings</a>
+              <a href="https://theclawmachine.dev" target="_blank" rel="noopener">Docs</a>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <main id="app-main" class="main-content">
+        {{ block "content" . }}{{ end }}
+      </main>
+    </body>
+  </html>
+{{ end }}
