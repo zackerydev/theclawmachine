@@ -3,8 +3,15 @@ set -eu
 
 REPO="zackerydev/theclawmachine"
 BINARY="clawmachine"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VERSION:-}"
+
+if [ -z "${INSTALL_DIR:-}" ]; then
+  if [ -n "${HOME:-}" ]; then
+    INSTALL_DIR="${HOME}/.local/bin"
+  else
+    INSTALL_DIR="/usr/local/bin"
+  fi
+fi
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -67,15 +74,47 @@ fi
 
 chmod +x "$TMP_DIR/$BINARY"
 
-if [ -w "$INSTALL_DIR" ]; then
-  cp "$TMP_DIR/$BINARY" "$INSTALL_DIR/$BINARY"
-else
-  if ! command -v sudo >/dev/null 2>&1; then
-    echo "error: write access denied to ${INSTALL_DIR} and sudo is unavailable" >&2
-    exit 1
-  fi
-  sudo cp "$TMP_DIR/$BINARY" "$INSTALL_DIR/$BINARY"
+if ! mkdir -p "$INSTALL_DIR" 2>/dev/null; then
+  echo "error: could not create install directory: ${INSTALL_DIR}" >&2
+  echo "hint: set INSTALL_DIR to a writable location, e.g. INSTALL_DIR=\$HOME/.local/bin" >&2
+  exit 1
 fi
+
+if [ ! -w "$INSTALL_DIR" ]; then
+  echo "error: install directory is not writable: ${INSTALL_DIR}" >&2
+  echo "hint: use a user-writable path, e.g. INSTALL_DIR=\$HOME/.local/bin" >&2
+  exit 1
+fi
+
+cp "$TMP_DIR/$BINARY" "$INSTALL_DIR/$BINARY"
 
 echo "Installed ${BINARY} to ${INSTALL_DIR}/${BINARY}"
 "$INSTALL_DIR/$BINARY" version || true
+
+case ":${PATH:-}:" in
+  *":$INSTALL_DIR:"*) in_path="yes" ;;
+  *) in_path="no" ;;
+esac
+
+if [ "$in_path" = "no" ]; then
+  path_export="export PATH=\"$INSTALL_DIR:\$PATH\""
+  shell_name="$(basename "${SHELL:-}")"
+
+  echo
+  echo "Your PATH does not include ${INSTALL_DIR}."
+  echo "Add this line to your shell config:"
+  case "$shell_name" in
+    zsh)
+      echo "  ${path_export}   # ~/.zshrc"
+      ;;
+    bash)
+      echo "  ${path_export}   # ~/.bashrc (or ~/.bash_profile on macOS)"
+      ;;
+    *)
+      echo "  ${path_export}"
+      ;;
+  esac
+  echo
+  echo "To use it in this terminal now, run:"
+  echo "  ${path_export}"
+fi
