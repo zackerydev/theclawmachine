@@ -188,4 +188,4 @@ kubectl get secretstores -A
 helm list -A
 ```
 
-If none of this helps, [open an issue](https://github.com/zackerydev/clawmachine/issues).
+If none of this helps, [open an issue](https://github.com/zackerydev/theclawmachine/issues).

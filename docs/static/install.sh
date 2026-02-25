@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO="zackerydev/clawmachine"
+REPO="zackerydev/theclawmachine"
 BINARY="clawmachine"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VERSION:-}"

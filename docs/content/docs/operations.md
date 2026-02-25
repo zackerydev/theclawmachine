@@ -53,7 +53,7 @@ helm upgrade clawmachine clawmachine/clawmachine -n claw-machine
 ```
 
 {{< callout type="info" >}}
-Check the [changelog](https://github.com/zackerydev/clawmachine/releases) before upgrading. Breaking changes happen. We try to document them.
+Check the [changelog](https://github.com/zackerydev/theclawmachine/releases) before upgrading. Breaking changes happen. We try to document them.
 {{< /callout >}}
 
 ## Upgrading Bots

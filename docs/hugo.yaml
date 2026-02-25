@@ -34,7 +34,7 @@ menu:
       pageRef: /docs/bots
       weight: 3
     - name: GitHub
-      url: https://github.com/zackerydev/clawmachine
+      url: https://github.com/zackerydev/theclawmachine
       weight: 4
       params:
         icon: github

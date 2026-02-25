@@ -27,6 +27,6 @@ ClawMachine is a Kubernetes-native dashboard with an **OpenClaw-first** workflow
 
 ## Community
 
-- **Bug or issue** — [open a GitHub issue](https://github.com/zackerydev/clawmachine/issues/new)
-- **Question or idea** — [start a GitHub discussion](https://github.com/zackerydev/clawmachine/discussions)
-- Conduct expectations: [CODE_OF_CONDUCT.md](https://github.com/zackerydev/clawmachine/blob/main/CODE_OF_CONDUCT.md)
+- **Bug or issue** — [open a GitHub issue](https://github.com/zackerydev/theclawmachine/issues/new)
+- **Question or idea** — [start a GitHub discussion](https://github.com/zackerydev/theclawmachine/discussions)
+- Conduct expectations: [CODE_OF_CONDUCT.md](https://github.com/zackerydev/theclawmachine/blob/main/CODE_OF_CONDUCT.md)

@@ -86,8 +86,8 @@ Full documentation at **[theclawmachine.dev](https://theclawmachine.dev)**.
 
 ## Contributing
 
-**Bug or issue?** [Open a GitHub issue](https://github.com/zackerydev/clawmachine/issues/new)
-**Question or idea?** [Start a GitHub discussion](https://github.com/zackerydev/clawmachine/discussions)
+**Bug or issue?** [Open a GitHub issue](https://github.com/zackerydev/theclawmachine/issues/new)
+**Question or idea?** [Start a GitHub discussion](https://github.com/zackerydev/theclawmachine/discussions)
 
 ## License
 

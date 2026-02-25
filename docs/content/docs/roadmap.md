@@ -25,4 +25,4 @@ Replace manually maintained command documentation with generated CLI reference o
 
 ---
 
-Have a feature request? [Open an issue on GitHub](https://github.com/zackerydev/clawmachine/issues).
+Have a feature request? [Open an issue on GitHub](https://github.com/zackerydev/theclawmachine/issues).
