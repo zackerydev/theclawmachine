@@ -62,10 +62,11 @@ jobs:
         run: |
           mkdir -p .cr-release-packages
           for chart in control-plane/charts/*/; do
+            if [ ! -f "${chart}Chart.yaml" ]; then
+              continue
+            fi
             helm package "$chart" -d .cr-release-packages/
           done
-          # Also package the control-plane (clawmachine) chart itself
-          helm package control-plane/charts/clawmachine/ -d .cr-release-packages/ 2>/dev/null || true
 
       - name: Upload chart packages to GitHub Releases
         run: |
