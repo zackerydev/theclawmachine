@@ -23,7 +23,7 @@ const (
 
 // DefaultChartRepoURL is the default Helm repository for bot charts.
 // Can be overridden via CLAWMACHINE_CHART_REPO env var.
-const DefaultChartRepoURL = "oci://ghcr.io/zackerydev/clawmachine/charts"
+const DefaultChartRepoURL = "oci://ghcr.io/zackerydev/theclawmachine/charts"
 
 //go:embed charts/picoclaw.tgz
 var picoClawChart []byte

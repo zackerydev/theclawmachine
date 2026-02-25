@@ -57,7 +57,7 @@ func TestResolveBundledImage(t *testing.T) {
 		Metadata: &chartv2.Metadata{AppVersion: "0.3.0"},
 		Values: map[string]any{
 			"image": map[string]any{
-				"repository": "ghcr.io/zackerydev/clawmachine",
+				"repository": "ghcr.io/zackerydev/theclawmachine",
 			},
 		},
 	}
@@ -66,8 +66,8 @@ func TestResolveBundledImage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolveBundledImage() error = %v", err)
 	}
-	if repo != "ghcr.io/zackerydev/clawmachine" {
-		t.Fatalf("repo = %q, want %q", repo, "ghcr.io/zackerydev/clawmachine")
+	if repo != "ghcr.io/zackerydev/theclawmachine" {
+		t.Fatalf("repo = %q, want %q", repo, "ghcr.io/zackerydev/theclawmachine")
 	}
 	if tag != "0.3.0" {
 		t.Fatalf("tag = %q, want %q", tag, "0.3.0")
@@ -92,10 +92,10 @@ func TestResolveBundledImage_MissingRepository(t *testing.T) {
 }
 
 func TestUpgradeOverrides(t *testing.T) {
-	got := upgradeOverrides("ghcr.io/zackerydev/clawmachine", "0.2.0")
+	got := upgradeOverrides("ghcr.io/zackerydev/theclawmachine", "0.2.0")
 	want := map[string]any{
 		"image": map[string]any{
-			"repository": "ghcr.io/zackerydev/clawmachine",
+			"repository": "ghcr.io/zackerydev/theclawmachine",
 			"tag":        "0.2.0",
 		},
 	}
@@ -150,7 +150,7 @@ func TestRunUpgrade_UsesFallbackTagAndOverrides(t *testing.T) {
 	}
 
 	image, _ := gotVals["image"].(map[string]any)
-	if image["repository"] != "ghcr.io/zackerydev/clawmachine" {
+	if image["repository"] != "ghcr.io/zackerydev/theclawmachine" {
 		t.Fatalf("repository override = %v", image["repository"])
 	}
 	if image["tag"] != "0.9.9" {
@@ -194,7 +194,7 @@ func stubUpgradeDeps() func() {
 			Metadata: &chartv2.Metadata{AppVersion: "0.9.9"},
 			Values: map[string]any{
 				"image": map[string]any{
-					"repository": "ghcr.io/zackerydev/clawmachine",
+					"repository": "ghcr.io/zackerydev/theclawmachine",
 				},
 			},
 		}, nil

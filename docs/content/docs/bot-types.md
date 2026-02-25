@@ -38,7 +38,7 @@ Defaults (`charts/ironclaw/values.yaml`):
 
 Defaults (`charts/busybox/values.yaml`):
 
-- image: `ghcr.io/zackerydev/clawmachine-toolbox:0.1.0`
+- image: `ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0`
 - service port: `80`
 
 BusyBox appears only when ClawMachine is running in dev mode.

@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/zackerydev/clawmachine-toolbox
+  repository: ghcr.io/zackerydev/theclawmachine-toolbox
   tag: "0.1.0"
   pullPolicy: IfNotPresent
 

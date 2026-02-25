@@ -83,7 +83,7 @@ jobs:
         run: |
           cr upload \
             --owner zackerydev \
-            --git-repo clawmachine \
+            --git-repo theclawmachine \
             --package-path .cr-release-packages/ \
             --token "${{ secrets.GITHUB_TOKEN }}" \
             --skip-existing
@@ -94,7 +94,7 @@ jobs:
         run: |
           cr index \
             --owner zackerydev \
-            --git-repo clawmachine \
+            --git-repo theclawmachine \
             --package-path .cr-release-packages/ \
             --index-path index.yaml \
             --push \

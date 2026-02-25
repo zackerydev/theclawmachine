@@ -59,13 +59,13 @@ homebrew_casks:
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Casks
-    homepage: https://github.com/zackerydev/clawmachine
+    homepage: https://github.com/zackerydev/theclawmachine
     description: Kubernetes-native dashboard for AI bots
 
 dockers_v2:
   - dockerfile: .config/Dockerfile.release
     images:
-      - ghcr.io/zackerydev/clawmachine
+      - ghcr.io/zackerydev/theclawmachine
     tags:
       - "{{ .Version }}"
       - latest
@@ -82,6 +82,6 @@ dockers_v2:
 release:
   github:
     owner: zackerydev
-    name: clawmachine
+    name: theclawmachine
   prerelease: auto
   name_template: "v{{ .Version }}"

@@ -147,7 +147,7 @@ backup:
   schedule: "0 */6 * * *"
   mode: pgdump
   image:
-    repository: ghcr.io/zackerydev/clawmachine
+    repository: ghcr.io/zackerydev/theclawmachine
     tag: "0.1.0"
     pullPolicy: IfNotPresent
   provider: "s3"

@@ -60,7 +60,7 @@ local_resource(
 
 local_resource(
     'toolbox-image',
-    cmd='docker build -t ghcr.io/zackerydev/clawmachine-toolbox:0.1.0 ../docker/toolbox && kind load docker-image ghcr.io/zackerydev/clawmachine-toolbox:0.1.0 --name clawmachine',
+    cmd='docker build -t ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0 ../docker/toolbox && kind load docker-image ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0 --name clawmachine',
     deps=['../docker/toolbox'],
     labels=['build'],
 )
@@ -95,14 +95,14 @@ docker_build(
     ],
 )
 
-# Backup/restore jobs in bot charts default to ghcr.io/zackerydev/clawmachine:0.1.0.
+# Backup/restore jobs in bot charts default to ghcr.io/zackerydev/theclawmachine:0.1.0.
 # Mirror the local control-plane image to that ref inside kind to avoid ImagePullBackOff in dev.
 local_resource(
     'clawmachine-backup-image',
     cmd=' && '.join([
         'docker image inspect clawmachine:latest >/dev/null 2>&1 || docker build -t clawmachine:latest ../control-plane',
-        'docker tag clawmachine:latest ghcr.io/zackerydev/clawmachine:0.1.0',
-        'kind load docker-image ghcr.io/zackerydev/clawmachine:0.1.0 --name clawmachine',
+        'docker tag clawmachine:latest ghcr.io/zackerydev/theclawmachine:0.1.0',
+        'kind load docker-image ghcr.io/zackerydev/theclawmachine:0.1.0 --name clawmachine',
     ]),
     deps=['../control-plane'],
     labels=['build'],

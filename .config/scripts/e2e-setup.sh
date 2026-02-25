@@ -78,7 +78,7 @@ wait_all() {
 echo "🔨 Step 1: Build bot images in parallel"
 
 # Build images used by installed workloads.
-bg "build clawmachine" docker buildx build --load -t "ghcr.io/zackerydev/clawmachine:${CLAWMACHINE_TAG}" .
+bg "build clawmachine" docker buildx build --load -t "ghcr.io/zackerydev/theclawmachine:${CLAWMACHINE_TAG}" .
 bg "build picoclaw"  docker buildx build --load -t "ghcr.io/zackerydev/picoclaw:${PICOCLAW_TAG}" ../docker/picoclaw
 bg "build openclaw"  docker buildx build --load -t "ghcr.io/zackerydev/openclaw:${OPENCLAW_TAG}" ../docker/openclaw
 bg "pull pgvector"   docker pull pgvector/pgvector:pg17
@@ -86,7 +86,7 @@ bg "pull pgvector"   docker pull pgvector/pgvector:pg17
 # toolbox depends on ironclaw — chain them
 bg "build ironclaw+toolbox" bash -c "
   docker buildx build --load -t ghcr.io/zackerydev/ironclaw:${IRONCLAW_TAG} ../docker/ironclaw
-  docker buildx build --load -t ghcr.io/zackerydev/clawmachine-toolbox:0.1.0 ../docker/toolbox
+  docker buildx build --load -t ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0 ../docker/toolbox
 "
 
 wait_all
@@ -102,8 +102,8 @@ echo "📦 Step 3: Load images into kind (parallel)"
 bg "load picoclaw"  kind load docker-image "ghcr.io/zackerydev/picoclaw:${PICOCLAW_TAG}"  --name "$CLUSTER_NAME"
 bg "load ironclaw"  kind load docker-image ghcr.io/zackerydev/ironclaw:${IRONCLAW_TAG}    --name "$CLUSTER_NAME"
 bg "load openclaw"  kind load docker-image "ghcr.io/zackerydev/openclaw:${OPENCLAW_TAG}"   --name "$CLUSTER_NAME"
-bg "load toolbox"   kind load docker-image ghcr.io/zackerydev/clawmachine-toolbox:0.1.0   --name "$CLUSTER_NAME"
-bg "load clawmachine" kind load docker-image "ghcr.io/zackerydev/clawmachine:${CLAWMACHINE_TAG}" --name "$CLUSTER_NAME"
+bg "load toolbox"   kind load docker-image ghcr.io/zackerydev/theclawmachine-toolbox:0.1.0   --name "$CLUSTER_NAME"
+bg "load clawmachine" kind load docker-image "ghcr.io/zackerydev/theclawmachine:${CLAWMACHINE_TAG}" --name "$CLUSTER_NAME"
 bg "load pgvector"  kind load docker-image pgvector/pgvector:pg17                         --name "$CLUSTER_NAME"
 wait_all
 echo "✅ Images loaded"

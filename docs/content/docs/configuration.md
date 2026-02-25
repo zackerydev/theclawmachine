@@ -43,7 +43,7 @@ This page covers runtime and chart configuration surfaces.
 | `PORT` | `8080` | server port |
 | `LOG_LEVEL` | `info` | structured logging level |
 | `POD_NAMESPACE` | `claw-machine` fallback | bot operation namespace at runtime |
-| `CLAWMACHINE_CHART_REPO` | `oci://ghcr.io/zackerydev/clawmachine/charts` | remote chart source override |
+| `CLAWMACHINE_CHART_REPO` | `oci://ghcr.io/zackerydev/theclawmachine/charts` | remote chart source override |
 
 ## Control Plane Chart
 
