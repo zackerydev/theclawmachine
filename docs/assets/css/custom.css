@@ -301,6 +301,38 @@ body:has(.cm-home) .hx-mx-auto {
 }
 
 
+/* Prerelease banner — full-width strip under the nav */
+.cm-prerelease-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 1.5rem;
+  background: rgba(234, 179, 8, 0.1);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+  color: #ca8a04;
+  font-family: var(--cm-font-mono);
+  font-size: 0.72rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.cm-prerelease-banner svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+@media (max-width: 600px) {
+  .cm-prerelease-banner {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+
 /* ---- Terminal window (hero right col) ---- */
 .cm-hero-terminal {
   animation: cm-fade-up 0.55s ease-out 0.12s both;

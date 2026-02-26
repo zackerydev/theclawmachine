@@ -1,6 +1,16 @@
 {{ define "main" }}
 <div class="cm-home">
 
+  {{/* ===== PRERELEASE BANNER ===== */}}
+  <div class="cm-prerelease-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>
+      <strong>Prerelease &amp; not production-ready.</strong>
+      Security has not been fully vetted — OpenClaw and all bots should be used at your own risk.
+      Expect bugs and breaking changes.
+    </span>
+  </div>
+
   {{/* ===== HERO ===== */}}
   <section class="cm-hero">
 
@@ -67,8 +77,8 @@
   <section class="cm-pillars cm-fade-in">
     <div class="cm-pillars-header">
       <span class="cm-section-label">// Why ClawMachine</span>
-      <h2 class="cm-pillars-title">Enterprise-grade security.<br>Zero extra infrastructure.</h2>
-      <p class="cm-pillars-sub">Every bot runs in a hardened, isolated environment — with the secrets management and network controls you'd expect from a production platform.</p>
+      <h2 class="cm-pillars-title">Isolation-first design.<br>On your own infrastructure.</h2>
+      <p class="cm-pillars-sub">Each bot runs in its own isolated environment with secrets management and network controls built in — still in active development, so sharp edges exist.</p>
     </div>
     <div class="cm-pillars-grid cm-stagger">
       <div class="cm-pillar cm-fade-in">
@@ -116,7 +126,7 @@
       <a href="{{ "docs/bots" | relURL }}" class="cm-bot-card cm-bot-card--open cm-fade-in">
         <span class="cm-bot-icon">🐙</span>
         <h3 class="cm-bot-name">OpenClaw</h3>
-        <p class="cm-bot-desc">Primary production path. General-purpose bot with plugins and channel integrations for real cluster operations.</p>
+        <p class="cm-bot-desc">Primary supported path. General-purpose bot with plugins and channel integrations — the most actively developed and dogfooded option.</p>
         <span class="cm-bot-tag">Recommended</span>
       </a>
       <a href="{{ "docs/bots" | relURL }}" class="cm-bot-card cm-bot-card--iron cm-fade-in">
@@ -144,7 +154,7 @@
       <div class="cm-step">
         <span class="cm-step-number">01</span>
         <h3 class="cm-step-title">Install to your cluster</h3>
-        <p class="cm-step-desc">One command sets up ClawMachine on any Kubernetes cluster — local or production. The interactive installer detects your environment.</p>
+        <p class="cm-step-desc">One command sets up ClawMachine on any Kubernetes cluster. The interactive installer detects your environment. Start local — production use is at your own discretion.</p>
         <code class="cm-step-code">curl -fsSL https://theclawmachine.dev/install.sh | bash</code>
       </div>
       <div class="cm-step">
@@ -221,7 +231,7 @@
     <div class="cm-cta-inner">
       <div>
         <h2 class="cm-cta-title">Ready to grab your bots?</h2>
-        <p class="cm-cta-subtitle">Deploy ClawMachine to your cluster in minutes.</p>
+        <p class="cm-cta-subtitle">Install ClawMachine and start experimenting. Prerelease — feedback welcome.</p>
       </div>
       <a href="{{ "docs/getting-started" | relURL }}" class="cm-btn cm-btn-primary">
         Get Started

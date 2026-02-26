@@ -6,7 +6,7 @@ next: getting-started
 ClawMachine is a Kubernetes-native dashboard with an **OpenClaw-first** workflow for deploying and operating bots.
 
 {{< callout type="warning" >}}
-**Status:** OpenClaw is the primary supported bot path. **PicoClaw** and **IronClaw** are currently **beta**.
+**Prerelease.** ClawMachine is under active development. Expect bugs, breaking changes, and incomplete features. Use at your own discretion — it is not production-ready. OpenClaw is the primary supported path; **PicoClaw** and **IronClaw** are **beta**.
 {{< /callout >}}
 
 {{< cards >}}
