@@ -133,6 +133,7 @@ jobs:
       - name: Build release binary for clawmachine image
         if: matrix.image == 'ghcr.io/zackerydev/theclawmachine'
         run: |
+          mise run charts
           mkdir -p "linux/${{ matrix.goarch }}"
           cd control-plane
           CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.goarch }} \
