@@ -134,9 +134,10 @@ jobs:
         if: matrix.image == 'ghcr.io/zackerydev/theclawmachine'
         run: |
           mkdir -p "linux/${{ matrix.goarch }}"
+          cd control-plane
           CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.goarch }} \
             go build -trimpath -ldflags "-s -w -X main.version=${{ steps.version.outputs.value }}" \
-            -o "linux/${{ matrix.goarch }}/clawmachine" ./control-plane/cmd/clawmachine
+            -o "../linux/${{ matrix.goarch }}/clawmachine" ./cmd/clawmachine
 
       - name: Login to GHCR
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
