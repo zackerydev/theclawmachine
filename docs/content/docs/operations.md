@@ -43,6 +43,9 @@ For bot namespaces, same commands with the appropriate namespace.
 clawmachine upgrade
 ```
 
+`clawmachine install` and `clawmachine upgrade` always set the control-plane Helm `image.tag` explicitly so deployed image tag stays in sync with the CLI version.  
+For `dev` builds, they fall back to the embedded chart `appVersion`.
+
 This upgrades the control plane only. Your bots are independent Helm releases — they keep running untouched. If a new ClawMachine version ships updated bot charts, existing bots don't auto-upgrade. You'd upgrade them individually through the dashboard or `helm upgrade`.
 
 Manual Helm fallback:

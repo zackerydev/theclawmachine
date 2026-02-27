@@ -22,6 +22,7 @@ import (
 	"github.com/zackerydev/clawmachine/control-plane/internal/middleware"
 	"github.com/zackerydev/clawmachine/control-plane/internal/onboarding"
 	"github.com/zackerydev/clawmachine/control-plane/internal/service"
+	versionutil "github.com/zackerydev/clawmachine/control-plane/internal/version"
 )
 
 type HelmHandler struct {
@@ -1132,27 +1133,11 @@ func (h *HelmHandler) upgradeWithRetry(ctx context.Context, name, botType string
 }
 
 func normalizeReleaseImageTag(v string) string {
-	v = strings.TrimSpace(v)
-	v = strings.TrimPrefix(v, "v")
-	if v == "" {
+	tag, err := versionutil.NormalizeRuntimeImageTag(v)
+	if err != nil {
 		return ""
 	}
-
-	parts := strings.Split(v, ".")
-	if len(parts) != 3 {
-		return ""
-	}
-	for _, p := range parts {
-		if p == "" {
-			return ""
-		}
-		for _, r := range p {
-			if r < '0' || r > '9' {
-				return ""
-			}
-		}
-	}
-	return v
+	return tag
 }
 
 func hasExplicitImageTag(values map[string]any) bool {
@@ -1175,7 +1160,11 @@ func ensureRuntimeImageTag(values map[string]any, runtimeVersion string, force b
 		return
 	}
 
-	tag := normalizeReleaseImageTag(runtimeVersion)
+	tag, err := versionutil.NormalizeRuntimeImageTag(runtimeVersion)
+	if err != nil {
+		slog.Warn("runtime image tag sync skipped due to invalid runtime version", "runtimeVersion", runtimeVersion, "error", err)
+		return
+	}
 	if tag == "" {
 		return
 	}

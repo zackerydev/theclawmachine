@@ -41,6 +41,12 @@ if [[ -z "${release_tag}" ]]; then
   exit 1
 fi
 
+expected_release_tag="${EXPECTED_RELEASE_TAG:-}"
+if [[ -n "${expected_release_tag}" && "${release_tag}" != "${expected_release_tag}" ]]; then
+  echo "❌ ${clawmachine_chart} appVersion=${release_tag}, want ${expected_release_tag} (EXPECTED_RELEASE_TAG)"
+  exit 1
+fi
+
 for repo in "${expected_repos[@]}"; do
   if ! grep -Fq -- "- ${repo}" "$goreleaser_file"; then
     echo "❌ Missing Goreleaser image output for ${repo}"

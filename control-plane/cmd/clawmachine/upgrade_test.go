@@ -31,17 +31,22 @@ func TestNormalizeImageTag(t *testing.T) {
 		appVersion   string
 		wantTag      string
 		wantFallback bool
+		wantErr      bool
 	}{
 		{name: "release version", cliVersion: "0.2.1", appVersion: "0.1.0", wantTag: "0.2.1", wantFallback: false},
 		{name: "release version with v prefix", cliVersion: "v0.2.1", appVersion: "0.1.0", wantTag: "0.2.1", wantFallback: false},
+		{name: "prerelease version", cliVersion: "v0.2.1-rc.1", appVersion: "0.1.0", wantTag: "0.2.1-rc.1", wantFallback: false},
 		{name: "dev fallback", cliVersion: "dev", appVersion: "0.1.0", wantTag: "0.1.0", wantFallback: true},
 		{name: "empty fallback", cliVersion: "", appVersion: "0.1.0", wantTag: "0.1.0", wantFallback: true},
-		{name: "prerelease fallback", cliVersion: "0.2.1-rc.1", appVersion: "0.1.0", wantTag: "0.1.0", wantFallback: true},
+		{name: "invalid runtime version", cliVersion: "dirty-build", appVersion: "0.1.0", wantErr: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotTag, gotFallback := normalizeImageTag(tt.cliVersion, tt.appVersion)
+			gotTag, gotFallback, err := normalizeImageTag(tt.cliVersion, tt.appVersion)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("normalizeImageTag() error = %v, wantErr %t", err, tt.wantErr)
+			}
 			if gotTag != tt.wantTag {
 				t.Fatalf("normalizeImageTag() tag = %q, want %q", gotTag, tt.wantTag)
 			}
@@ -180,6 +185,32 @@ func TestRunUpgrade_UpgradeError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "upgrading release") {
 		t.Fatalf("expected wrapped upgrade error, got: %v", err)
+	}
+}
+
+func TestRunUpgrade_InvalidRuntimeVersion(t *testing.T) {
+	restore := stubUpgradeDeps()
+	defer restore()
+
+	origVersion := version
+	version = "dirty-build"
+	defer func() { version = origVersion }()
+
+	listReleasesForUpgrade = func(_ *action.Configuration, _ string) ([]release.Releaser, error) {
+		return []release.Releaser{&releasev1.Release{Name: "clawmachine"}}, nil
+	}
+
+	cmd := newUpgradeCmd()
+	if err := cmd.Flags().Set("yes", "true"); err != nil {
+		t.Fatalf("set flag yes: %v", err)
+	}
+
+	err := runUpgrade(cmd)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "runtime version") {
+		t.Fatalf("expected invalid runtime version error, got: %v", err)
 	}
 }
 

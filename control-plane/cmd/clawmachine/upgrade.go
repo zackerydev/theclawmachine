@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 	"github.com/zackerydev/clawmachine/control-plane/internal/service"
+	versionutil "github.com/zackerydev/clawmachine/control-plane/internal/version"
 	"helm.sh/helm/v4/pkg/action"
 	"helm.sh/helm/v4/pkg/chart"
 	"helm.sh/helm/v4/pkg/chart/loader"
@@ -104,7 +104,7 @@ func runUpgrade(cmd *cobra.Command) error {
 	}
 
 	if fallback {
-		styledPrintf(dimStyle, "CLI version %q is not a release tag; using chart appVersion %q.", version, tag)
+		styledPrintf(dimStyle, "CLI version %q resolved to dev mode; using chart appVersion %q.", version, tag)
 	}
 
 	styledPrintf(accentStyle, "Upgrading ClawMachine %q in namespace %q to %s:%s...", releaseName, namespace, repo, tag)
@@ -160,9 +160,9 @@ func resolveBundledImage(chrt chart.Charter, cliVersion string) (repo, tag strin
 			appVersion = strings.TrimSpace(fmt.Sprintf("%v", metadata["AppVersion"]))
 		}
 	}
-	tag, usedFallback = normalizeImageTag(cliVersion, appVersion)
-	if tag == "" {
-		return "", "", false, fmt.Errorf("unable to resolve image tag from CLI version %q or chart appVersion", cliVersion)
+	tag, usedFallback, err = normalizeImageTag(cliVersion, appVersion)
+	if err != nil {
+		return "", "", false, fmt.Errorf("resolving image tag: %w", err)
 	}
 
 	return repo, tag, usedFallback, nil
@@ -195,28 +195,8 @@ func chartImageRepository(values map[string]any) (string, error) {
 	return repo, nil
 }
 
-func normalizeImageTag(cliVersion, chartAppVersion string) (tag string, usedFallback bool) {
-	candidate := strings.TrimSpace(cliVersion)
-	if isReleaseSemver(candidate) {
-		return strings.TrimPrefix(candidate, "v"), false
-	}
-
-	fallback := strings.TrimSpace(chartAppVersion)
-	if fallback == "" {
-		return "", true
-	}
-	return fallback, true
-}
-
-func isReleaseSemver(v string) bool {
-	if strings.TrimSpace(v) == "" {
-		return false
-	}
-	parsed, err := semver.NewVersion(strings.TrimPrefix(v, "v"))
-	if err != nil {
-		return false
-	}
-	return parsed.Prerelease() == ""
+func normalizeImageTag(cliVersion, chartAppVersion string) (tag string, usedFallback bool, err error) {
+	return versionutil.ResolveRuntimeOrFallbackImageTag(cliVersion, chartAppVersion)
 }
 
 func upgradeOverrides(repo, tag string) map[string]any {

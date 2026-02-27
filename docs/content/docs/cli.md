@@ -63,6 +63,12 @@ clawmachine install --context my-cluster --name clawmachine --yes
 | `--interactive` | `true` | Run interactive installer |
 | `--yes`, `-y` | `false` | Skip confirmation prompts |
 
+Image tag contract:
+- `clawmachine install` always deploys `ghcr.io/zackerydev/theclawmachine:<tag>` with an explicit `image.tag` override.
+- For release/prerelease binaries, `<tag>` is the CLI version (without a leading `v`).
+- For `dev` or empty CLI versions, install falls back to the embedded chart `appVersion`.
+- Invalid non-dev CLI versions fail fast instead of silently falling back.
+
 ## `upgrade`
 
 ```bash
@@ -75,6 +81,8 @@ clawmachine upgrade --namespace claw-machine --name clawmachine --yes
 | `--namespace` | `claw-machine` | Target namespace |
 | `--name` | `clawmachine` | Helm release name |
 | `--yes`, `-y` | `false` | Skip confirmation prompt |
+
+`clawmachine upgrade` uses the same image tag contract as `install`.
 
 ## `uninstall`
 

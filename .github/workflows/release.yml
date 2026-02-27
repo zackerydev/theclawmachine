@@ -34,8 +34,16 @@ jobs:
             ${{ runner.os }}-go-release-
             ${{ runner.os }}-go-
 
+      - name: Compute release version
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+
       - name: Validate release image contract
         run: mise run release:image-contract
+        env:
+          EXPECTED_RELEASE_TAG: ${{ steps.version.outputs.value }}
 
       - name: Run GoReleaser (artifacts only)
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6

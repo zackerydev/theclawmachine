@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v4/pkg/action"
+	"helm.sh/helm/v4/pkg/chart"
 	"helm.sh/helm/v4/pkg/chart/loader"
 	"helm.sh/helm/v4/pkg/kube"
 
@@ -25,6 +26,23 @@ type installPlan struct {
 }
 
 const defaultKindClusterName = "claw-machine"
+
+var (
+	loadControlPlaneChartForInstall = func() (chart.Charter, error) {
+		return loader.LoadArchive(bytes.NewReader(service.GetControlPlaneChart()))
+	}
+	initActionConfigForInstall = initActionConfig
+	runHelmInstallForInstall   = func(actionConfig *action.Configuration, releaseName, namespace string, chrt chart.Charter, vals map[string]any) error {
+		client := action.NewInstall(actionConfig)
+		client.ReleaseName = releaseName
+		client.Namespace = namespace
+		client.CreateNamespace = true
+		client.WaitStrategy = kube.StatusWatcherStrategy
+		client.Timeout = 5 * time.Minute
+		_, err := client.Run(chrt, vals)
+		return err
+	}
+)
 
 func newInstallCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -97,26 +115,27 @@ func runInstall(cmd *cobra.Command) error {
 		}
 	}
 
-	chartBytes := service.GetControlPlaneChart()
-	chrt, err := loader.LoadArchive(bytes.NewReader(chartBytes))
+	chrt, err := loadControlPlaneChartForInstall()
 	if err != nil {
 		return fmt.Errorf("loading embedded chart: %w", err)
 	}
 
-	actionConfig, err := initActionConfig(settings, namespace)
+	repo, tag, fallback, err := resolveBundledImage(chrt, version)
 	if err != nil {
 		return err
 	}
 
-	client := action.NewInstall(actionConfig)
-	client.ReleaseName = plan.ReleaseName
-	client.Namespace = plan.Namespace
-	client.CreateNamespace = true
-	client.WaitStrategy = kube.StatusWatcherStrategy
-	client.Timeout = 5 * time.Minute
+	if fallback {
+		styledPrintf(dimStyle, "CLI version %q resolved to dev mode; using chart appVersion %q.", version, tag)
+	}
 
-	styledPrintf(accentStyle, "Installing ClawMachine into namespace %q...", plan.Namespace)
-	if _, err = client.Run(chrt, nil); err != nil {
+	actionConfig, err := initActionConfigForInstall(settings, namespace)
+	if err != nil {
+		return err
+	}
+
+	styledPrintf(accentStyle, "Installing ClawMachine into namespace %q using %s:%s...", plan.Namespace, repo, tag)
+	if err := runHelmInstallForInstall(actionConfig, plan.ReleaseName, plan.Namespace, chrt, upgradeOverrides(repo, tag)); err != nil {
 		return fmt.Errorf("installing release: %w", err)
 	}
 

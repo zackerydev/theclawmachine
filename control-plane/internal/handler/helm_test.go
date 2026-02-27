@@ -289,7 +289,9 @@ func TestNormalizeReleaseImageTag(t *testing.T) {
 		{name: "stable", in: "0.1.0", want: "0.1.0"},
 		{name: "stable with v", in: "v0.1.0", want: "0.1.0"},
 		{name: "dev", in: "dev", want: ""},
-		{name: "prerelease", in: "0.1.0-rc.1", want: ""},
+		{name: "prerelease", in: "0.1.0-rc.1", want: "0.1.0-rc.1"},
+		{name: "invalid", in: "dirty-build", want: ""},
+		{name: "metadata", in: "0.1.0+sha.123", want: ""},
 	}
 
 	for _, tt := range tests {
@@ -355,6 +357,33 @@ func TestHelmHandler_Install_RuntimeTagDefaulting(t *testing.T) {
 		}
 		if tag := image["tag"]; tag != "9.9.9" {
 			t.Fatalf("image.tag = %v, want 9.9.9", tag)
+		}
+	})
+
+	t.Run("accepts prerelease runtime tag", func(t *testing.T) {
+		done := make(chan struct{})
+		mock := &mockHelm{
+			installed:   &service.ReleaseInfo{Name: "test-bot", Status: "deployed"},
+			installDone: done,
+		}
+		h := NewHelmHandlerWithVersion(mock, &mockTemplate{}, nil, nil, nil, nil, false, "v0.1.7-rc.1")
+
+		req := httptest.NewRequest(http.MethodPost, "/bots", bytes.NewBufferString(`{"releaseName":"test-bot","botType":"picoclaw"}`))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		h.Install(rec, req)
+
+		if rec.Code != http.StatusSeeOther {
+			t.Fatalf("status %d, body: %s", rec.Code, rec.Body.String())
+		}
+		<-done
+
+		image, ok := mock.installOpts.Values["image"].(map[string]any)
+		if !ok {
+			t.Fatalf("image missing from install values: %#v", mock.installOpts.Values)
+		}
+		if tag := image["tag"]; tag != "0.1.7-rc.1" {
+			t.Fatalf("image.tag = %v, want 0.1.7-rc.1", tag)
 		}
 	})
 }
