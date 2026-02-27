@@ -1169,6 +1169,13 @@ func ensureRuntimeImageTag(values map[string]any, runtimeVersion string, force b
 		return
 	}
 
+	stampImageTag(values, tag, force)
+	if backup, ok := values["backup"].(map[string]any); ok {
+		stampImageTag(backup, tag, force)
+	}
+}
+
+func stampImageTag(values map[string]any, tag string, force bool) {
 	image, _ := values["image"].(map[string]any)
 	if image == nil {
 		image = make(map[string]any)

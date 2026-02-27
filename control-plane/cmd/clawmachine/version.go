@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zackerydev/clawmachine/control-plane/internal/service"
+	versionutil "github.com/zackerydev/clawmachine/control-plane/internal/version"
 	"helm.sh/helm/v4/pkg/chart/loader"
 	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 )
@@ -99,6 +100,8 @@ type botImageRef struct {
 }
 
 func resolveBotImageRefs() ([]botImageRef, error) {
+	runtimeTag, _ := versionutil.NormalizeRuntimeImageTag(version)
+
 	refs := make([]botImageRef, 0, len(botChartSpecs))
 	for _, spec := range botChartSpecs {
 		archive, err := service.GetEmbeddedChart(spec.kind)
@@ -118,6 +121,9 @@ func resolveBotImageRefs() ([]botImageRef, error) {
 		repo, tag, err := imageRefFromValues(chrtV2.Values)
 		if err != nil {
 			return nil, fmt.Errorf("resolving image ref for %s: %w", spec.name, err)
+		}
+		if runtimeTag != "" {
+			tag = runtimeTag
 		}
 		refs = append(refs, botImageRef{name: spec.name, repository: repo, tag: tag})
 	}

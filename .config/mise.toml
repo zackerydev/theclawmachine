@@ -68,10 +68,6 @@ description = "Run go vet"
 depends = ["charts"]
 run = "cd control-plane && go vet ./..."
 
-[tasks."release:image-contract"]
-description = "Validate bot image refs match Goreleaser image outputs"
-run = "bash .config/scripts/check-image-contract.sh"
-
 [tasks.clean]
 description = "Remove build artifacts"
 run = "cd control-plane && rm -rf internal/service/charts/ clawmachine && echo '✓ Build artifacts cleaned'"

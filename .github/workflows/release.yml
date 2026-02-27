@@ -40,11 +40,6 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           echo "value=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Validate release image contract
-        run: mise run release:image-contract
-        env:
-          EXPECTED_RELEASE_TAG: ${{ steps.version.outputs.value }}
-
       - name: Run GoReleaser (artifacts only)
         uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
@@ -141,6 +136,7 @@ jobs:
       - name: Build release binary for clawmachine image
         if: matrix.image == 'ghcr.io/zackerydev/theclawmachine'
         run: |
+          bash .config/scripts/stamp-version.sh "${{ steps.version.outputs.value }}"
           mise run charts
           mkdir -p "linux/${{ matrix.goarch }}"
           cd control-plane
@@ -233,6 +229,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Stamp chart versions
+        run: bash .config/scripts/stamp-version.sh "${GITHUB_REF_NAME#v}"
 
       - name: Package charts
         run: |

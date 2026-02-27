@@ -2401,3 +2401,63 @@ func TestIsHTMX(t *testing.T) {
 		})
 	}
 }
+
+func TestEnsureRuntimeImageTag_BackupImage(t *testing.T) {
+	t.Run("stamps backup.image.tag when force", func(t *testing.T) {
+		values := map[string]any{
+			"image": map[string]any{"repository": "ghcr.io/example", "tag": "old"},
+			"backup": map[string]any{
+				"enabled": true,
+				"image":   map[string]any{"repository": "ghcr.io/backup", "tag": "old"},
+			},
+		}
+		ensureRuntimeImageTag(values, "1.2.3", true)
+
+		image := values["image"].(map[string]any)
+		if image["tag"] != "1.2.3" {
+			t.Fatalf("image.tag = %v, want 1.2.3", image["tag"])
+		}
+
+		backup := values["backup"].(map[string]any)
+		backupImage := backup["image"].(map[string]any)
+		if backupImage["tag"] != "1.2.3" {
+			t.Fatalf("backup.image.tag = %v, want 1.2.3", backupImage["tag"])
+		}
+	})
+
+	t.Run("respects force=false for backup tag", func(t *testing.T) {
+		values := map[string]any{
+			"image": map[string]any{"tag": "existing"},
+			"backup": map[string]any{
+				"image": map[string]any{"tag": "existing"},
+			},
+		}
+		ensureRuntimeImageTag(values, "1.2.3", false)
+
+		image := values["image"].(map[string]any)
+		if image["tag"] != "existing" {
+			t.Fatalf("image.tag = %v, want existing", image["tag"])
+		}
+
+		backup := values["backup"].(map[string]any)
+		backupImage := backup["image"].(map[string]any)
+		if backupImage["tag"] != "existing" {
+			t.Fatalf("backup.image.tag = %v, want existing", backupImage["tag"])
+		}
+	})
+
+	t.Run("no backup section is a no-op", func(t *testing.T) {
+		values := map[string]any{
+			"image": map[string]any{},
+		}
+		ensureRuntimeImageTag(values, "1.2.3", true)
+
+		image := values["image"].(map[string]any)
+		if image["tag"] != "1.2.3" {
+			t.Fatalf("image.tag = %v, want 1.2.3", image["tag"])
+		}
+		if _, ok := values["backup"]; ok {
+			t.Fatal("backup section should not be created")
+		}
+	})
+}
