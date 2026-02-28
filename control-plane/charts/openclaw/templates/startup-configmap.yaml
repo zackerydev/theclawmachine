@@ -33,12 +33,32 @@ data:
     echo "Applying managed configFile.content to $CONFIG_FILE"
     cat >"$CONFIG_FILE" <<'CLAWMACHINE_OPENCLAW_CONFIG'
 {{ .Values.configFile.content | nindent 4 }}
-CLAWMACHINE_OPENCLAW_CONFIG
+    CLAWMACHINE_OPENCLAW_CONFIG
     {{- end }}
 
     warn() {
       echo "WARNING: $*"
     }
+
+    {{- if .Values.extraSoftware.toolVersions }}
+    TOOL_VERSIONS_DIR="{{ .Values.openclawConfigDir }}/workspace"
+    TOOL_VERSIONS_FILE="$TOOL_VERSIONS_DIR/.tool-versions"
+    mkdir -p "$TOOL_VERSIONS_DIR"
+
+    echo "Applying extra software tools from $TOOL_VERSIONS_FILE"
+    cat >"$TOOL_VERSIONS_FILE" <<'CLAWMACHINE_TOOL_VERSIONS'
+{{ .Values.extraSoftware.toolVersions | nindent 4 }}
+    CLAWMACHINE_TOOL_VERSIONS
+    sed -i 's/^    //' "$TOOL_VERSIONS_FILE"
+
+    export MISE_CACHE_DIR="$TOOL_VERSIONS_DIR/.cache/mise"
+    mkdir -p "$MISE_CACHE_DIR"
+    if ! command -v mise >/dev/null 2>&1; then
+      warn "mise is not available in the container; skipping extra software installation"
+    elif ! (cd "$TOOL_VERSIONS_DIR" && mise install); then
+      warn "mise install failed; continuing startup"
+    fi
+    {{- end }}
 
     set_cfg_json() {
       local path="$1"

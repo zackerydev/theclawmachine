@@ -72,7 +72,7 @@ OP_CONNECT_TOKEN="$OP_TOKEN" \
 OP_VAULT_NAME="$OP_VAULT" \
 OP_SECRET_ITEM_NAME="$OP_SECRET_ITEM" \
   go test -tags e2e -v -count=1 -timeout 30m \
-    -run 'TestLifecycle|TestIronClawLifecycle|TestOpenClawLifecycle|TestPicoClawLifecycle' \
+    -run 'TestLifecycle|TestIronClawLifecycle|TestOpenClawLifecycle|TestOpenClawExtraSoftwareInstallsClaude|TestPicoClawLifecycle' \
     ./e2e/
 
 echo "✅ Lifecycle E2E tests passed!"

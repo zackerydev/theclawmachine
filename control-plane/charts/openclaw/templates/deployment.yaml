@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         {{- include "openclaw.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/startup: {{ include (print $.Template.BasePath "/startup-configmap.yaml") . | sha256sum }}
     spec:
       {{- if and .Values.backup.enabled .Values.backup.restoreOnStartup }}
       initContainers:

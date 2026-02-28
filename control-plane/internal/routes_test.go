@@ -120,6 +120,7 @@ func TestSetup_AllRoutesRegistered(t *testing.T) {
 		{"GET", "/bots/new", ""},
 		{"POST", "/bots/new/infra", "botType=picoclaw&releaseName=my-bot"},
 		{"POST", "/bots/new/config", "botType=picoclaw&releaseName=my-bot"},
+		{"POST", "/bots/new/software", "botType=picoclaw&releaseName=my-bot"},
 		{"GET", "/bots", ""},
 		{"GET", "/bots/my-bot/cli", ""},
 		{"GET", "/settings", ""},

@@ -11,7 +11,12 @@ RUN make deps && make build \
 
 FROM alpine:3.23
 
-RUN apk add --no-cache ca-certificates tzdata
+ARG MISE_VERSION=v2026.2.21
+RUN apk add --no-cache ca-certificates tzdata wget
+
+RUN MISE_VERSION=${MISE_VERSION} MISE_INSTALL_PATH=/usr/local/bin/mise MISE_INSTALL_HELP=0 \
+    sh -c "$(wget -qO- https://mise.run)" \
+    && /usr/local/bin/mise --version
 
 COPY --from=builder /picoclaw /usr/local/bin/picoclaw
 

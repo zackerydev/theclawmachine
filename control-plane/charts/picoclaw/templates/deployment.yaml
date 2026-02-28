@@ -96,6 +96,8 @@ spec:
         - name: picoclaw
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/start-picoclaw.sh"]
+          args: ["gateway"]
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -128,9 +130,15 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            - name: startup-script
+              mountPath: /scripts
             - name: workspace
               mountPath: {{ .Values.configFile.mountPath }}
       volumes:
+        - name: startup-script
+          configMap:
+            name: {{ include "picoclaw.fullname" . }}-startup
+            defaultMode: 0755
         - name: workspace
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:

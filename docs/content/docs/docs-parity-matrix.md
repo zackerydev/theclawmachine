@@ -28,6 +28,7 @@ Repo-verified matrix used to keep docs aligned with code.
 - `GET /bots/new`
 - `POST /bots/new/infra`
 - `POST /bots/new/config`
+- `POST /bots/new/software`
 - `GET /bots/{name}/page`
 - `GET /settings`
 - `GET /settings/providers`

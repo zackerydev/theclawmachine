@@ -500,6 +500,23 @@ func (h *HelmHandler) NewConfigPage(w http.ResponseWriter, r *http.Request) {
 	h.renderInstallConfigPage(w, r, botType, allFormValues(r))
 }
 
+// NewSoftwarePage renders step 3 after validating step 2.
+func (h *HelmHandler) NewSoftwarePage(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		htmxError(w, r, "Invalid form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	botType := formValue(r, "botType")
+	releaseName := strings.TrimSpace(formValue(r, "releaseName"))
+	if !middleware.ValidName(releaseName) {
+		htmxError(w, r, "Invalid release name", http.StatusBadRequest)
+		return
+	}
+
+	h.renderInstallSoftwarePage(w, r, botType, allFormValues(r))
+}
+
 // AvailableSecret is a synced ExternalSecret for template rendering.
 type AvailableSecret struct {
 	Name         string
@@ -627,6 +644,45 @@ func (h *HelmHandler) renderInstallConfigPage(w http.ResponseWriter, r *http.Req
 	}
 
 	if !renderOrError(w, r, h.tmpl, "bot-form-config", data, isHTMX(r)) {
+		return
+	}
+}
+
+func (h *HelmHandler) renderInstallSoftwarePage(w http.ResponseWriter, r *http.Request, botType string, values map[string]string) {
+	allowed := slices.Contains(h.allowedBotTypes(), botType)
+	if !allowed {
+		http.NotFound(w, r)
+		return
+	}
+
+	var botConfig *botenv.BotConfig
+	if h.bots != nil {
+		botConfig = h.bots.Get(botType)
+	}
+	if botConfig == nil {
+		botConfig = &botenv.BotConfig{
+			Name:        botType,
+			DisplayName: botType,
+		}
+	}
+
+	if values == nil {
+		values = make(map[string]string)
+	}
+	values["botType"] = botType
+	if values["onboardingVersion"] == "" {
+		values["onboardingVersion"] = onboarding.ProfileVersion
+	}
+
+	data := struct {
+		BotConfig *botenv.BotConfig
+		Values    map[string]string
+	}{
+		BotConfig: botConfig,
+		Values:    values,
+	}
+
+	if !renderOrError(w, r, h.tmpl, "bot-form-software", data, isHTMX(r)) {
 		return
 	}
 }
@@ -1508,6 +1564,13 @@ func parseInstallForm(r *http.Request, bots *botenv.Registry) (service.InstallOp
 				"accessKeyId":     ak,
 				"secretAccessKey": sk,
 			}
+		}
+	}
+
+	extraToolVersions := strings.TrimSpace(formValue(r, "extraToolVersions"))
+	if extraToolVersions != "" {
+		opts.Values["extraSoftware"] = map[string]any{
+			"toolVersions": extraToolVersions,
 		}
 	}
 

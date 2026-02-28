@@ -14,6 +14,11 @@ ARG OPENCLAW_VERSION=2026.2.22
 RUN npm install -g openclaw@${OPENCLAW_VERSION} \
   && openclaw --version
 
+ARG MISE_VERSION=v2026.2.21
+RUN MISE_VERSION=${MISE_VERSION} MISE_INSTALL_PATH=/usr/local/bin/mise MISE_INSTALL_HELP=0 \
+  sh -c "$(curl -fsSL https://mise.run)" \
+  && /usr/local/bin/mise --version
+
 # Create OpenClaw directories
 RUN mkdir -p /root/.openclaw/workspace /root/.openclaw/credentials
 

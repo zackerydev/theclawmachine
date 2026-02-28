@@ -47,6 +47,9 @@ networkPolicy:
 
 env: {}
 
+extraSoftware:
+  toolVersions: ""
+
 # Config file mount — generates a Secret with bot config and mounts it as a file.
 configFile:
   enabled: false

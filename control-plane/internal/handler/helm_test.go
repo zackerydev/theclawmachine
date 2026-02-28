@@ -774,6 +774,61 @@ func TestHelmHandler_NewPage_WithType_SetsPersistenceDefaults(t *testing.T) {
 	}
 }
 
+func TestHelmHandler_NewSoftwarePage_RendersStep3(t *testing.T) {
+	tmpl := &mockTemplate{}
+	botReg, err := botenv.NewRegistry()
+	if err != nil {
+		t.Fatalf("new registry: %v", err)
+	}
+	h := NewHelmHandler(&mockHelm{}, tmpl, nil, nil, nil, botReg, false)
+
+	form := "releaseName=my-bot&botType=openclaw&extraToolVersions=node+22%0Ajq+1.8.1"
+	req := httptest.NewRequest(http.MethodPost, "/bots/new/software", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	h.NewSoftwarePage(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if len(tmpl.calls) != 1 {
+		t.Fatalf("expected 1 template call, got %d", len(tmpl.calls))
+	}
+	if tmpl.calls[0].name != "bot-form-software" {
+		t.Fatalf("template = %q, want bot-form-software", tmpl.calls[0].name)
+	}
+
+	data, ok := tmpl.calls[0].data.(struct {
+		BotConfig *botenv.BotConfig
+		Values    map[string]string
+	})
+	if !ok {
+		t.Fatalf("unexpected data type: %T", tmpl.calls[0].data)
+	}
+	if got := data.Values["extraToolVersions"]; got != "node 22\njq 1.8.1" {
+		t.Fatalf("values[extraToolVersions] = %q, want multiline tool versions", got)
+	}
+}
+
+func TestHelmHandler_NewSoftwarePage_InvalidReleaseName(t *testing.T) {
+	tmpl := &mockTemplate{}
+	h := NewHelmHandler(&mockHelm{}, tmpl, nil, nil, nil, nil, false)
+
+	form := "releaseName=Bad_Name&botType=openclaw"
+	req := httptest.NewRequest(http.MethodPost, "/bots/new/software", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	rec := httptest.NewRecorder()
+	h.NewSoftwarePage(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+	if len(tmpl.calls) != 0 {
+		t.Fatalf("expected no template calls, got %d", len(tmpl.calls))
+	}
+}
+
 func TestHelmHandler_Install_FormPost(t *testing.T) {
 	done := make(chan struct{})
 	installed := &service.ReleaseInfo{Name: "form-bot", Status: "deployed"}
@@ -781,7 +836,7 @@ func TestHelmHandler_Install_FormPost(t *testing.T) {
 	reg := &botenv.Registry{}
 	h := NewHelmHandler(mock, &mockTemplate{}, nil, nil, nil, reg, false)
 
-	form := "releaseName=form-bot&botType=picoclaw&persistence=on&persistenceSize=2Gi&ingress=on"
+	form := "releaseName=form-bot&botType=picoclaw&persistence=on&persistenceSize=2Gi&ingress=on&extraToolVersions=node+22%0Ajq+1.8.1"
 	req := httptest.NewRequest(http.MethodPost, "/bots", strings.NewReader(form))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("HX-Request", "true")
@@ -818,6 +873,13 @@ func TestHelmHandler_Install_FormPost(t *testing.T) {
 	np, _ := mock.installOpts.Values["networkPolicy"].(map[string]any)
 	if np == nil || np["ingress"] != true {
 		t.Errorf("networkPolicy.ingress = %v, want true", np)
+	}
+	extraSoftware, _ := mock.installOpts.Values["extraSoftware"].(map[string]any)
+	if extraSoftware == nil {
+		t.Fatalf("extraSoftware missing from install values: %#v", mock.installOpts.Values)
+	}
+	if got := extraSoftware["toolVersions"]; got != "node 22\njq 1.8.1" {
+		t.Errorf("extraSoftware.toolVersions = %v, want multiline tool versions", got)
 	}
 }
 
@@ -1001,6 +1063,19 @@ func TestParseInstallForm(t *testing.T) {
 			check: func(t *testing.T, opts service.InstallOptions) {
 				if opts.ConfigFields["defaultModel"] != "claude-sonnet-4-20250514" {
 					t.Errorf("configFields = %v", opts.ConfigFields)
+				}
+			},
+		},
+		{
+			name: "extra software tool versions",
+			form: "releaseName=x&botType=picoclaw&extraToolVersions=node+22%0Ajq+1.8.1",
+			check: func(t *testing.T, opts service.InstallOptions) {
+				extraSoftware, ok := opts.Values["extraSoftware"].(map[string]any)
+				if !ok {
+					t.Fatalf("extraSoftware missing from values: %#v", opts.Values)
+				}
+				if got := extraSoftware["toolVersions"]; got != "node 22\njq 1.8.1" {
+					t.Errorf("toolVersions = %v, want multiline tool versions", got)
 				}
 			},
 		},

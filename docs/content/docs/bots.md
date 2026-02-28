@@ -18,12 +18,14 @@ See [Bot Types](../bot-types) for defaults.
 
 ## Install Flow
 
-Dashboard install is a two-step wizard:
+Dashboard install is a three-step wizard:
 
 1. **Infrastructure step** (`POST /bots/new/infra`)
 : release name, persistence, ingress/egress, allowed domains, workspace import, backup settings.
 2. **Config step** (`POST /bots/new/config`)
 : onboarding-generated bot-specific config questions and model/secret mappings.
+3. **Extra software step** (`POST /bots/new/software`)
+: optional `.tool-versions` content for startup `mise install`.
 
 Final install request is `POST /bots`.
 

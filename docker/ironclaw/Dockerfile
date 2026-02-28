@@ -22,12 +22,18 @@ RUN test -f target/release/ironclaw
 # --- Runtime stage ---
 FROM debian:bookworm-slim
 
+ARG MISE_VERSION=v2026.2.21
+
 # ca-certificates: TLS for outbound API calls (LLM providers, NEAR AI)
 # tzdata: timezone support for heartbeat/cron scheduling
 # postgresql-client: pg_dump/psql for database backup/restore
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates tzdata wget postgresql-client \
     && rm -rf /var/lib/apt/lists/*
+
+RUN MISE_VERSION=${MISE_VERSION} MISE_INSTALL_PATH=/usr/local/bin/mise MISE_INSTALL_HELP=0 \
+    sh -c "$(wget -qO- https://mise.run)" \
+    && /usr/local/bin/mise --version
 
 # Non-root user with no login shell
 RUN groupadd --system --gid 1000 ironclaw \
