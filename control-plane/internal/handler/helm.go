@@ -500,7 +500,7 @@ func (h *HelmHandler) NewConfigPage(w http.ResponseWriter, r *http.Request) {
 	h.renderInstallConfigPage(w, r, botType, allFormValues(r))
 }
 
-// NewSoftwarePage renders step 3 after validating step 2.
+// NewSoftwarePage renders step 3 after validating required prior inputs.
 func (h *HelmHandler) NewSoftwarePage(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		htmxError(w, r, "Invalid form: "+err.Error(), http.StatusBadRequest)

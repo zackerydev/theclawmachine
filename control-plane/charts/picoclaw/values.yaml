@@ -35,6 +35,11 @@ healthCheck:
   port: 18790
   initialDelaySeconds: 10
   periodSeconds: 15
+  startupProbe:
+    enabled: true
+    failureThreshold: 60
+    periodSeconds: 5
+    timeoutSeconds: 1
 
 networkPolicy:
   ingress: false

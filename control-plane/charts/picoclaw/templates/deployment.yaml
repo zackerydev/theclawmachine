@@ -127,6 +127,15 @@ spec:
               port: http
             initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
             periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+          {{- if .Values.healthCheck.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            periodSeconds: {{ .Values.healthCheck.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.healthCheck.startupProbe.failureThreshold }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
