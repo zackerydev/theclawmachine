@@ -171,6 +171,7 @@ vendored charts (sha256):
 | `GET` | `/bots/new` |
 | `POST` | `/bots/new/infra` |
 | `POST` | `/bots/new/config` |
+| `POST` | `/bots/new/software` |
 | `GET` | `/bots/{name}/page` |
 | `GET` | `/settings` |
 | `GET` | `/settings/providers` |

@@ -1,0 +1,56 @@
+{{ define "bot-form-software" }}
+  {{ template "layout" . }}
+{{ end }}
+
+{{ define "title" }}
+  - Install {{ .BotConfig.DisplayName }} (3/3)
+{{ end }}
+
+{{ define "content" }}
+  <section>
+    <div class="page-header">
+      <div>
+        <span class="eyebrow">// Install Wizard · Step 3 of 3</span>
+        <h1>Install {{ .BotConfig.DisplayName }}</h1>
+        <p class="muted">Optional extra software via a managed <code>.tool-versions</code> file.</p>
+      </div>
+    </div>
+
+    <ol class="wizard-steps">
+      <li class="done">1. Infrastructure</li>
+      <li class="done">2. {{ .BotConfig.DisplayName }} Config</li>
+      <li class="active">3. Extra Software</li>
+    </ol>
+
+    <div class="card">
+      <form method="post" action="/bots" id="config-form">
+        {{ range $key, $value := .Values }}
+          {{ if ne $key "extraToolVersions" }}
+            <input type="hidden" name="{{ $key }}" value="{{ $value }}" />
+          {{ end }}
+        {{ end }}
+
+        <fieldset class="form-fieldset">
+          <legend>.tool-versions Content</legend>
+          <textarea
+            id="extraToolVersions"
+            name="extraToolVersions"
+            rows="10"
+            placeholder="node 22&#10;jq 1.8.1"
+          >{{ index .Values "extraToolVersions" }}</textarea>
+          <p class="help">One tool per line in standard <code>.tool-versions</code> format. Leave empty to skip extra software.</p>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" formaction="/bots/new/config" class="btn btn-secondary">Back</button>
+          <button type="submit" id="install-bot-btn" class="btn btn-primary">
+            <span class="install-btn-idle">Install Bot</span>
+            <span class="install-btn-busy spinner-wrap"><span class="spinner"></span> Installing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <script src="/static/bot-form.js" defer></script>
+{{ end }}

@@ -49,7 +49,8 @@ open http://localhost:8080
 2. Choose bot type.
 3. Complete step 1 (infrastructure settings).
 4. Complete step 2 (bot config questions).
-5. Submit to install.
+5. Optional: complete step 3 (extra software `.tool-versions`).
+6. Submit to install.
 
 ## Next
 

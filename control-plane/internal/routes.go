@@ -33,6 +33,7 @@ func Setup(mux *http.ServeMux, handlers *Handlers) {
 	mux.HandleFunc("GET /bots/new", handlers.Helm.NewPage)
 	mux.HandleFunc("POST /bots/new/infra", handlers.Helm.NewInfraPage)
 	mux.HandleFunc("POST /bots/new/config", handlers.Helm.NewConfigPage)
+	mux.HandleFunc("POST /bots/new/software", handlers.Helm.NewSoftwarePage)
 	mux.HandleFunc("GET /bots/{name}/page", handlers.Helm.DetailPage)
 
 	// Bot management API
