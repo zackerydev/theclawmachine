@@ -4,6 +4,7 @@ project_name: clawmachine
 
 before:
   hooks:
+    - bash .config/scripts/stamp-version.sh {{ .Version }}
     - mise run charts
 
 builds:

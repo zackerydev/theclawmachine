@@ -35,7 +35,8 @@ func TestVersionCommand_Default(t *testing.T) {
 
 func TestVersionCommand_All(t *testing.T) {
 	origVersion := version
-	version = "0.1.0"
+	// Use a version different from chart defaults to verify runtime tag override.
+	version = "9.9.9"
 	defer func() { version = origVersion }()
 
 	cmd := newVersionCmd()
@@ -51,7 +52,7 @@ func TestVersionCommand_All(t *testing.T) {
 	got := out.String()
 	for _, want := range []string{
 		"clawmachine",
-		"v0.1.0",
+		"v9.9.9",
 		"bot images (canonical repo:tag):",
 		"openclaw:",
 		"picoclaw:",
@@ -64,6 +65,19 @@ func TestVersionCommand_All(t *testing.T) {
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("output missing %q:\n%s", want, got)
+		}
+	}
+
+	// Verify runtime tag override: all bot images should use the runtime version,
+	// not the hardcoded chart default.
+	for _, want := range []string{
+		"ghcr.io/zackerydev/openclaw:9.9.9",
+		"ghcr.io/zackerydev/picoclaw:9.9.9",
+		"ghcr.io/zackerydev/ironclaw:9.9.9",
+		"ghcr.io/zackerydev/theclawmachine-toolbox:9.9.9",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("output missing runtime-tagged image %q:\n%s", want, got)
 		}
 	}
 
