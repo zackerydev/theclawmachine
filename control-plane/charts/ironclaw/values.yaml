@@ -141,6 +141,9 @@ workspace:
 
 env: {}
 
+extraSoftware:
+  toolVersions: ""
+
 backup:
   enabled: false
   restoreOnStartup: false

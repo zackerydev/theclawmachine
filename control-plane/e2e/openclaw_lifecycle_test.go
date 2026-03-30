@@ -368,7 +368,7 @@ func TestOpenClawLifecycle(t *testing.T) {
 				"anthropicApiKey": "1p:e2e-anthropic-key",
 				"discordBotToken": "1p:e2e-discord-token",
 				"discordEnabled":  "true",
-				"defaultModel":    "anthropic/claude-haiku-4-5-20251001", // Changed model
+				"defaultModel":    "anthropic/claude-haiku-4-5", // Changed model
 			},
 		}
 		resp := doPut(t, baseURL+"/bots/"+testBotName+"/config", body)
@@ -409,7 +409,7 @@ func TestOpenClawLifecycle(t *testing.T) {
 	})
 
 	t.Run("Step10_VerifyUpdatedRuntimeConfig", func(t *testing.T) {
-		assertRuntimeConfig(t, "anthropic/claude-haiku-4-5-20251001")
+		assertRuntimeConfig(t, "anthropic/claude-haiku-4-5")
 	})
 
 	// --- Step 11: Delete bot ---

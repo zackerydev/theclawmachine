@@ -22,12 +22,31 @@ RUN test -f target/release/ironclaw
 # --- Runtime stage ---
 FROM debian:bookworm-slim
 
+ARG MISE_VERSION=v2026.2.21
+ARG MISE_SHA256_X64=97ad70c76034cd7a5e6ea2fb09b022da8267d105c9ac095192d3cd63aee9cc2f
+ARG MISE_SHA256_ARM64=4587074544adf44cc817cfa43bd31ee66424d0bd1c7bf6e4632b73f611125b02
+
 # ca-certificates: TLS for outbound API calls (LLM providers, NEAR AI)
 # tzdata: timezone support for heartbeat/cron scheduling
 # postgresql-client: pg_dump/psql for database backup/restore
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates tzdata wget postgresql-client \
+    ca-certificates curl tzdata postgresql-client \
     && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    arch="$(uname -m)"; \
+    case "$arch" in \
+      x86_64) mise_arch="x64"; mise_sha="${MISE_SHA256_X64}" ;; \
+      aarch64|arm64) mise_arch="arm64"; mise_sha="${MISE_SHA256_ARM64}" ;; \
+      *) echo "unsupported architecture: $arch" >&2; exit 1 ;; \
+    esac; \
+    mise_tar="mise-${MISE_VERSION}-linux-${mise_arch}.tar.gz"; \
+    curl -fsSL "https://github.com/jdx/mise/releases/download/${MISE_VERSION}/${mise_tar}" -o /tmp/mise.tar.gz; \
+    echo "${mise_sha}  /tmp/mise.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/mise.tar.gz -C /tmp; \
+    install -m 0755 /tmp/mise/bin/mise /usr/local/bin/mise; \
+    rm -rf /tmp/mise /tmp/mise.tar.gz; \
+    /usr/local/bin/mise --version
 
 # Non-root user with no login shell
 RUN groupadd --system --gid 1000 ironclaw \

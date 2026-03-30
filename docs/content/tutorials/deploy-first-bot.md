@@ -3,7 +3,7 @@ title: Deploy Your First Bot
 weight: 1
 ---
 
-This tutorial walks through deploying your first bot via the two-step install wizard.
+This tutorial walks through deploying your first bot via the three-step install wizard.
 
 ## Prerequisites
 
@@ -39,9 +39,15 @@ Click **Next**.
 
 Fill bot-specific config questions. For secret fields, choose synced ExternalSecrets where available.
 
+Click **Next**.
+
+## Step 5: Extra software (step 3)
+
+Optionally provide `.tool-versions` content for command-line tools you want installed by `mise` on bot startup.
+
 Click **Install Bot**.
 
-## Step 5: Verify
+## Step 6: Verify
 
 - Bot appears on `/`
 - Detail page loads at `/bots/{name}/page`
